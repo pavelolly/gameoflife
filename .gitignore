@@ -1,0 +1,6 @@
+# vscode
+.vscode/
+
+# classes
+*.class
+
