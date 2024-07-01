@@ -17,6 +17,10 @@ public class GameOfLifeModel {
         public State copy() {
             return new State(field, rows, cols);
         }
+
+        public State deepcopy() {
+            return new State(new Field(field).getBufferRef(), rows, cols);
+        }
     }
 
 
@@ -28,7 +32,20 @@ public class GameOfLifeModel {
     }
 
     public State getState() {
-        return mState.copy();
+        return mState.deepcopy();
+    }
+
+    public void clearField() {
+        mField.clear();
+        mBackField.clear();
+    }
+
+    public void setState(State state) {
+        mField     = new Field(state.field);
+        mBackField = new Field(state.field);
+
+        mState = state.copy();
+        mState.field = mBackField.getBufferRef();
     }
 
     public void nextStep() {
@@ -81,7 +98,7 @@ public class GameOfLifeModel {
         return count;
     }
     
-    private class Field {
+    private static class Field {
         public Field(byte[][] buffer) {
             mBuffer = new byte[buffer.length][];
             for (int i = 0; i < buffer.length; ++i) {
@@ -98,6 +115,12 @@ public class GameOfLifeModel {
 
         public void set(int i, int j, byte value) {
             mBuffer[i][j] = value;
+        }
+
+        public void clear() {
+            for (int i = 0; i < mRows; ++i) {
+                Arrays.fill(mBuffer[i], (byte)0);
+            }
         }
 
         public byte get(int i, int j) {
