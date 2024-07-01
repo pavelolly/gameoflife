@@ -1,6 +1,6 @@
 
 SRC := gameoflife
-SOURCES = ${SRC}/GameOfLifeModel.java ${SRC}/GameOfLife.java
+SOURCES = ${SRC}/GameOfLifeModel.java ${SRC}/GameOfLifeFrame.java ${SRC}/GameOfLife.java
 
 .PHONY: all clean run
 

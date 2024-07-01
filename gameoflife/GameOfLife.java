@@ -6,21 +6,28 @@ public class GameOfLife {
     public static void main(String[] args) throws IOException, InterruptedException {
         byte[][] buffer = {{0, 0, 0, 0, 0}, {0, 0, 1, 0, 0}, {0, 0, 0, 1, 0}, {0, 1, 1, 1, 0}, {0, 0, 0, 0, 0}};
         GameOfLifeModel game = new GameOfLifeModel(buffer);
+        
+        GameOfLifeFrame frame = new GameOfLifeFrame(game);
 
-        while (true) {
-            GameOfLifeModel.State state = game.getState();
+        // while (true) {
+        //     System.out.println(frame.getWidth());
+        //     Thread.sleep(1000);
+        // }
 
-            for (int i = 0; i < state.rows; ++i) {
-                for (int j = 0; j < state.cols; ++j) {
-                    System.out.print((state.field[i][j] > 0 ? "*" : ".") + " ");
-                }
-                System.out.println();
-            }
+        // while (true) {
+        //     GameOfLifeModel.State state = game.getState();
 
-            Thread.sleep(1000);
-            game.nextStep();
+        //     for (int i = 0; i < state.rows; ++i) {
+        //         for (int j = 0; j < state.cols; ++j) {
+        //             System.out.print((state.field[i][j] > 0 ? "*" : ".") + " ");
+        //         }
+        //         System.out.println();
+        //     }
 
-            System.out.print("\u001b["+(game.getState().rows)+"F");
-        }
+        //     Thread.sleep(1000);
+        //     game.nextStep();
+
+        //     System.out.print("\u001b["+(game.getState().rows)+"F");
+        // }
     }
 }
