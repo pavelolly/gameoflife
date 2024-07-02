@@ -1,0 +1,10 @@
+- build to .jar                          -- no need as i move to IDEA
+- make slider with speed of simulation   -- done
+- key bindings
+-! move field
+-! scale field
+-! change field with clicks
+-! load state from file
+-?- add colors to state (optional)
+- menu bar
+- make everything fancy
