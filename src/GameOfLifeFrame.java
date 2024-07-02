@@ -1,13 +1,6 @@
-import java.awt.BorderLayout;
-import java.awt.FlowLayout;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
+import java.awt.*;
+import java.awt.event.*;
 import java.util.HashMap;
-import java.awt.Color;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -54,12 +47,61 @@ public class GameOfLifeFrame extends JFrame {
         this.setSize(M_PANEL_INIT_WIDTH, M_PANEL_INIT_HEIGHT);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setLayout(new BorderLayout());
-        this.addKeyListener(new KeyListenerButtons());
+        this.addKeyListener(new KeyListener() {
+            @Override
+            public void keyTyped(KeyEvent e) {}
+
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (mPresesedKeys.contains(Integer.valueOf(e.getKeyCode()))) {
+                    return;
+                }
+
+                switch (e.getKeyCode()) {
+                    case KeyEvent.VK_R:
+                        mGame.setState(mGameInitialState);
+                        mCentralPanel.resetPosition();
+                        mCentralPanel.repaint();
+                        break;
+                    case KeyEvent.VK_C:
+                        mGame.clearField();
+                        mCentralPanel.repaint();
+                        break;
+                    case KeyEvent.VK_SPACE:
+                        if (mUpdating) {
+                            mButtons.get("Play").setText("Play");
+                            mButtons.get("Step").setEnabled(true);
+                        } else {
+                            mButtons.get("Play").setText("Stop");
+                            mButtons.get("Step").setEnabled(false);
+                        }
+
+                        mUpdating = !mUpdating;
+                        break;
+                    case KeyEvent.VK_ENTER:
+                        if (!mUpdating) {
+                            nextStep();
+                        }
+                        break;
+                    default:
+                        return;
+                }
+
+                mPresesedKeys.add(Integer.valueOf(e.getKeyCode()));
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e) {
+                mPresesedKeys.remove(Integer.valueOf(e.getKeyCode()));
+            }
+        });
         this.setFocusable(true);
 
         // panels
         mCentralPanel = new CentralPanel();
         mCentralPanel.setLayout(null);
+        mCentralPanel.addMouseListener(mCentralPanel);
+        mCentralPanel.addMouseMotionListener(mCentralPanel);
 
         mBottomPanel = new JPanel();
         mBottomPanel.setLayout(new BorderLayout());
@@ -82,12 +124,46 @@ public class GameOfLifeFrame extends JFrame {
 
         for (JButton button : mButtons.values()) {
             button.setFocusable(false);
-            button.addActionListener(new ActionListenerButtons());
+            button.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent event) {
+                    Object source = event.getSource();
+
+                    if (source == mButtons.get("Clear")) {
+                        mGame.clearField();
+                        mCentralPanel.repaint();
+                    } else if (source == mButtons.get("Reset")) {
+                        mGame.setState(mGameInitialState);
+                        mCentralPanel.resetPosition();
+                        mCentralPanel.repaint();
+                    } else if (source == mButtons.get("Play")) {
+                        var button = (JButton)source;
+
+                        if (mUpdating) {
+                            button.setText("Play");
+                            mButtons.get("Step").setEnabled(true);
+                        } else {
+                            button.setText("Stop");
+                            mButtons.get("Step").setEnabled(false);
+                        }
+
+                        mUpdating = !mUpdating;
+                    } else if (source == mButtons.get("Step")) {
+                        nextStep();
+                    }
+                }
+            });
+
         }
 
         // slider
         mSlider = new JSlider(JSlider.HORIZONTAL, M_TIME_DELTA_MIN, M_TIME_DELTA_MAX, mTimeDelta);
-        mSlider.addChangeListener(new ChangeListenerSlider());
+        mSlider.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                mTimeDelta = ((JSlider) e.getSource()).getValue();
+            }
+        });
         mSlider.setFocusable(false);
 
         // keys
@@ -139,100 +215,18 @@ public class GameOfLifeFrame extends JFrame {
 
     private Set<Integer> mPresesedKeys;
 
-    private class ActionListenerButtons implements ActionListener {
-        @Override
-        public void actionPerformed(ActionEvent event) {
-            Object source = event.getSource();
-
-            if (source == mButtons.get("Clear")) {
-                mGame.clearField();
-                mCentralPanel.repaint();
-            } else if (source == mButtons.get("Reset")) {
-                mGame.setState(mGameInitialState);
-                mCentralPanel.repaint();
-            } else if (source == mButtons.get("Play")) {
-                var button = (JButton)source;
-                
-                if (mUpdating) {
-                    button.setText("Play");
-                    mButtons.get("Step").setEnabled(true);
-                } else {
-                    button.setText("Stop");
-                    mButtons.get("Step").setEnabled(false);
-                }
-
-                mUpdating = !mUpdating;
-            } else if (source == mButtons.get("Step")) {
-                nextStep();
-            }
-        }
-    }
-
-    private class KeyListenerButtons implements KeyListener {
-        @Override
-        public void keyTyped(KeyEvent e) {
-            // System.out.println("typed "+e.getKeyCode());
+    private class CentralPanel extends JPanel implements MouseListener, MouseMotionListener {
+        public void resetPosition() {
+            mGridX = 100;
+            mGridY = 100;
+            mMouseLastKnownPosition = null;
         }
 
-        @Override
-        public void keyPressed(KeyEvent e) {
-            if (mPresesedKeys.contains(Integer.valueOf(e.getKeyCode()))) {
-                return;
-            }
 
-            switch (e.getKeyCode()) {
-                case KeyEvent.VK_R:
-                    mGame.setState(mGameInitialState);
-                    mCentralPanel.repaint();
-                    break;
-                case KeyEvent.VK_C:
-                    mGame.clearField();
-                    mCentralPanel.repaint();
-                    break;
-                case KeyEvent.VK_SPACE:
-                    if (mUpdating) {
-                        mButtons.get("Play").setText("Play");
-                        mButtons.get("Step").setEnabled(true);
-                    } else {
-                        mButtons.get("Play").setText("Stop");
-                        mButtons.get("Step").setEnabled(false);
-                    }
-
-                    mUpdating = !mUpdating;
-                    break;
-                case KeyEvent.VK_ENTER:
-                    if (!mUpdating) {
-                        nextStep();
-                    }
-                    break;
-                default:
-                    return;
-            }
-
-            mPresesedKeys.add(Integer.valueOf(e.getKeyCode()));
-        }
-
-        @Override
-        public void keyReleased(KeyEvent e) {
-            mPresesedKeys.remove(Integer.valueOf(e.getKeyCode()));
-        }
-    }
-
-
-    private class ChangeListenerSlider implements ChangeListener {
-        @Override
-        public void stateChanged(ChangeEvent e) {
-            var slider = (JSlider) e.getSource();
-
-            mTimeDelta = slider.getValue();
-        }
-    }
-
-    private class CentralPanel extends JPanel {
         @Override
         public void paint(Graphics graphics) {
             Graphics2D graphics2D = (Graphics2D) graphics;
-    
+
             graphics2D.setBackground(mBackgroundColor);
             graphics2D.clearRect(this.getBounds().x, this.getBounds().y, this.getWidth(), this.getHeight());
 
@@ -264,5 +258,58 @@ public class GameOfLifeFrame extends JFrame {
         private Color mBackgroundColor = new Color(0xff505050); // grey
         private Color mDeadCellColor   = new Color(0xff252525); // dark grey
         private Color mAliveCellColor  = new Color(0xffFFB60B); // yellow-ish
+
+        private Point mMouseLastKnownPosition;
+        private Boolean mMouseInBounds;
+
+        @Override
+        public void mouseClicked(MouseEvent e) {}
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+            if (mMouseInBounds == null || !mMouseInBounds) {
+                return;
+            }
+            // System.out.println("Pressed");
+            mMouseLastKnownPosition = e.getPoint();
+        }
+
+        @Override
+        public void mouseReleased(MouseEvent e) {}
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            // System.out.println("Entered");
+            mMouseInBounds = true;
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+            // System.out.println("Exited");
+            mMouseInBounds = false;
+        }
+
+        @Override
+        public void mouseDragged(MouseEvent e) {
+            // System.out.println("Dragged");
+            if (mMouseInBounds == null || mMouseLastKnownPosition == null) {
+                return;
+            }
+
+            Point currentPosition = e.getPoint();
+
+            int diffX = currentPosition.x - mMouseLastKnownPosition.x;
+            int diffY = currentPosition.y - mMouseLastKnownPosition.y;
+
+            mGridX += diffX;
+            mGridY += diffY;
+
+            mMouseLastKnownPosition = currentPosition;
+
+            this.repaint();
+        }
+
+        @Override
+        public void mouseMoved(MouseEvent e) {}
     }
 }
