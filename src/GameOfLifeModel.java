@@ -1,5 +1,3 @@
-package gameoflife;
-
 import java.util.Arrays;
 
 public class GameOfLifeModel {

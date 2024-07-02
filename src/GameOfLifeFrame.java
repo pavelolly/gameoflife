@@ -1,5 +1,3 @@
-package gameoflife;
-
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.Graphics;
@@ -27,23 +25,20 @@ public class GameOfLifeFrame extends JFrame {
         mGameInitialState = game.getState();
 
         // time delta
-        mUpdateThread = new Thread() {
-            @Override
-            public void run() {
-                while (true) {
-                    if (!mUpdating) {
-                        continue;
-                    }
-
-                    long before = System.currentTimeMillis();
-
-                    nextStep();
-                    mCentralPanel.repaint();
-
-                    while (System.currentTimeMillis() - before <= mTimeDelta) {}
+        mUpdateThread = new Thread(() -> {
+            while (true) {
+                if (!mUpdating) {
+                    continue;
                 }
+
+                long before = System.currentTimeMillis();
+
+                nextStep();
+                mCentralPanel.repaint();
+
+                while (System.currentTimeMillis() - before <= mTimeDelta);
             }
-        };
+        });
         mUpdateThread.setDaemon(true);
         mUpdateThread.start();
 

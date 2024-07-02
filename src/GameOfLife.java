@@ -1,9 +1,5 @@
-package gameoflife;
-
-import java.io.IOException;
-
 public class GameOfLife {
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) {
         byte[][] buffer = {{0, 0, 0, 0, 0}, {0, 0, 1, 0, 0}, {0, 0, 0, 1, 0}, {0, 1, 1, 1, 0}, {0, 0, 0, 0, 0}};
         GameOfLifeModel game = new GameOfLifeModel(buffer);
     
