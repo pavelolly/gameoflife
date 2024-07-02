@@ -4,8 +4,13 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.util.HashMap;
 import java.awt.Color;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -24,7 +29,9 @@ public class GameOfLifeFrame extends JFrame {
         mGame = game;
         mGameInitialState = game.getState();
 
-        // time delta
+        // update thread
+        mUpdating = false;
+        mTimeDelta = (M_TIME_DELTA_MIN + M_TIME_DELTA_MAX) / 2;
         mUpdateThread = new Thread(() -> {
             while (true) {
                 if (!mUpdating) {
@@ -42,14 +49,13 @@ public class GameOfLifeFrame extends JFrame {
         mUpdateThread.setDaemon(true);
         mUpdateThread.start();
 
-        mUpdating = false;
-        mTimeDelta = (M_TIME_DELTA_MIN + M_TIME_DELTA_MAX) / 2;
-
         // frame
         this.setTitle("GoL");
         this.setSize(M_PANEL_INIT_WIDTH, M_PANEL_INIT_HEIGHT);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setLayout(new BorderLayout());
+        this.addKeyListener(new KeyListenerButtons());
+        this.setFocusable(true);
 
         // panels
         mCentralPanel = new CentralPanel();
@@ -82,6 +88,10 @@ public class GameOfLifeFrame extends JFrame {
         // slider
         mSlider = new JSlider(JSlider.HORIZONTAL, M_TIME_DELTA_MIN, M_TIME_DELTA_MAX, mTimeDelta);
         mSlider.addChangeListener(new ChangeListenerSlider());
+        mSlider.setFocusable(false);
+
+        // keys
+        mPresesedKeys = new HashSet<>();
         
         // binding
         mBottomLeftPanel.add(mButtons.get("Clear"));
@@ -124,8 +134,10 @@ public class GameOfLifeFrame extends JFrame {
     private JPanel mBottomLeftPanel;
     private JPanel mBottomRightPanel;
 
-    private HashMap<String, JButton> mButtons;
+    private Map<String, JButton> mButtons;
     private JSlider mSlider;
+
+    private Set<Integer> mPresesedKeys;
 
     private class ActionListenerButtons implements ActionListener {
         @Override
@@ -144,22 +156,70 @@ public class GameOfLifeFrame extends JFrame {
                 if (mUpdating) {
                     button.setText("Play");
                     mButtons.get("Step").setEnabled(true);
-                    mUpdating = false;
                 } else {
                     button.setText("Stop");
                     mButtons.get("Step").setEnabled(false);
-                    mUpdating = true;
                 }
 
-                // mUpdating = !mUpdating;
-                
+                mUpdating = !mUpdating;
             } else if (source == mButtons.get("Step")) {
                 nextStep();
             }
         }
     }
 
-    public class ChangeListenerSlider implements ChangeListener {
+    private class KeyListenerButtons implements KeyListener {
+        @Override
+        public void keyTyped(KeyEvent e) {
+            // System.out.println("typed "+e.getKeyCode());
+        }
+
+        @Override
+        public void keyPressed(KeyEvent e) {
+            if (mPresesedKeys.contains(Integer.valueOf(e.getKeyCode()))) {
+                return;
+            }
+
+            switch (e.getKeyCode()) {
+                case KeyEvent.VK_R:
+                    mGame.setState(mGameInitialState);
+                    mCentralPanel.repaint();
+                    break;
+                case KeyEvent.VK_C:
+                    mGame.clearField();
+                    mCentralPanel.repaint();
+                    break;
+                case KeyEvent.VK_SPACE:
+                    if (mUpdating) {
+                        mButtons.get("Play").setText("Play");
+                        mButtons.get("Step").setEnabled(true);
+                    } else {
+                        mButtons.get("Play").setText("Stop");
+                        mButtons.get("Step").setEnabled(false);
+                    }
+
+                    mUpdating = !mUpdating;
+                    break;
+                case KeyEvent.VK_ENTER:
+                    if (!mUpdating) {
+                        nextStep();
+                    }
+                    break;
+                default:
+                    return;
+            }
+
+            mPresesedKeys.add(Integer.valueOf(e.getKeyCode()));
+        }
+
+        @Override
+        public void keyReleased(KeyEvent e) {
+            mPresesedKeys.remove(Integer.valueOf(e.getKeyCode()));
+        }
+    }
+
+
+    private class ChangeListenerSlider implements ChangeListener {
         @Override
         public void stateChanged(ChangeEvent e) {
             var slider = (JSlider) e.getSource();
