@@ -7,13 +7,14 @@ import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.HashMap;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.awt.Color;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.JSlider;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 public class GameOfLifeFrame extends JFrame {
     public GameOfLifeFrame(GameOfLifeModel game) {
@@ -25,9 +26,29 @@ public class GameOfLifeFrame extends JFrame {
         mGame = game;
         mGameInitialState = game.getState();
 
-        // timer
-        mUpdateTimer = new Timer();
-        mTimerIsScheduled = false;
+        // time delta
+        mUpdateThread = new Thread() {
+            @Override
+            public void run() {
+                while (true) {
+                    if (!mUpdating) {
+                        continue;
+                    }
+
+                    long before = System.currentTimeMillis();
+
+                    nextStep();
+                    mCentralPanel.repaint();
+
+                    while (System.currentTimeMillis() - before <= mTimeDelta) {}
+                }
+            }
+        };
+        mUpdateThread.setDaemon(true);
+        mUpdateThread.start();
+
+        mUpdating = false;
+        mTimeDelta = (M_TIME_DELTA_MIN + M_TIME_DELTA_MAX) / 2;
 
         // frame
         this.setTitle("GoL");
@@ -62,12 +83,18 @@ public class GameOfLifeFrame extends JFrame {
             button.setFocusable(false);
             button.addActionListener(new ActionListenerButtons());
         }
+
+        // slider
+        mSlider = new JSlider(JSlider.HORIZONTAL, M_TIME_DELTA_MIN, M_TIME_DELTA_MAX, mTimeDelta);
+        mSlider.addChangeListener(new ChangeListenerSlider());
         
         // binding
         mBottomLeftPanel.add(mButtons.get("Clear"));
         mBottomLeftPanel.add(mButtons.get("Reset"));
         mBottomLeftPanel.add(mButtons.get("Play"));
         mBottomLeftPanel.add(mButtons.get("Step"));
+
+        mBottomRightPanel.add(mSlider);
 
         mBottomPanel.add(mBottomLeftPanel, BorderLayout.WEST);
         mBottomPanel.add(mBottomRightPanel, BorderLayout.EAST);
@@ -86,8 +113,13 @@ public class GameOfLifeFrame extends JFrame {
 
     private GameOfLifeModel mGame;
     private GameOfLifeModel.State mGameInitialState;
-    private Timer mUpdateTimer;
-    private boolean mTimerIsScheduled;
+
+    private Thread mUpdateThread;
+    private volatile boolean mUpdating;
+    private int mTimeDelta;
+
+    private final int M_TIME_DELTA_MIN = 200;
+    private final int M_TIME_DELTA_MAX = 1000;
 
     private final int M_PANEL_INIT_WIDTH = 800;
     private final int M_PANEL_INIT_HEIGHT = 600;
@@ -98,6 +130,7 @@ public class GameOfLifeFrame extends JFrame {
     private JPanel mBottomRightPanel;
 
     private HashMap<String, JButton> mButtons;
+    private JSlider mSlider;
 
     private class ActionListenerButtons implements ActionListener {
         @Override
@@ -113,28 +146,30 @@ public class GameOfLifeFrame extends JFrame {
             } else if (source == mButtons.get("Play")) {
                 var button = (JButton)source;
                 
-                if (mTimerIsScheduled) {
-                    mUpdateTimer.cancel();
-                    mUpdateTimer = new Timer();
-
+                if (mUpdating) {
                     button.setText("Play");
                     mButtons.get("Step").setEnabled(true);
+                    mUpdating = false;
                 } else {
-                    mUpdateTimer.schedule(new TimerTask() {
-                        @Override
-                        public void run() {
-                            nextStep();
-                        }
-                    }, 1000, 1000);
-
                     button.setText("Stop");
                     mButtons.get("Step").setEnabled(false);
+                    mUpdating = true;
                 }
+
+                // mUpdating = !mUpdating;
                 
-                mTimerIsScheduled = !mTimerIsScheduled;
             } else if (source == mButtons.get("Step")) {
                 nextStep();
             }
+        }
+    }
+
+    public class ChangeListenerSlider implements ChangeListener {
+        @Override
+        public void stateChanged(ChangeEvent e) {
+            var slider = (JSlider) e.getSource();
+
+            mTimeDelta = slider.getValue();
         }
     }
 
