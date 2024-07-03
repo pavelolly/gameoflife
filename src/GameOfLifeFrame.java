@@ -197,8 +197,7 @@ public class GameOfLifeFrame extends JFrame {
         public void resetGrid() {
             this.gridX = 100;
             this.gridY = 100;
-            this.cellWidth = 20;
-            this.cellHeight = 20;
+            this.cellSize = 20;
             this.mouseLastKnownPosition = null;
         }
 
@@ -215,27 +214,26 @@ public class GameOfLifeFrame extends JFrame {
             for (int y = 0; y < state.field.getRows(); ++y) {
                 for (int x = 0; x < state.field.getCols(); ++x) {
                     graphics2D.setPaint(state.field.get(y, x) > 0 ? this.colorAliveCell : this.colorDeadCell);
-                    graphics2D.fillRect(this.gridX + x * this.cellWidth, this.gridY + y * this.cellHeight, this.cellWidth, this.cellHeight);
+                    graphics2D.fillRect(this.gridX + x * this.cellSize, this.gridY + y * this.cellSize, this.cellSize, this.cellSize);
                 }
             }
 
             // draw grid
             graphics2D.setPaint(Color.BLACK);
             for (int i = 0; i < state.field.getRows(); ++i) {
-                graphics2D.drawLine(this.gridX, this.gridY + i * this.cellHeight,
-                        this.gridX + state.field.getCols() * this.cellWidth, this.gridY + i * this.cellHeight);
+                graphics2D.drawLine(this.gridX, this.gridY + i * this.cellSize,
+                        this.gridX + state.field.getCols() * this.cellSize, this.gridY + i * this.cellSize);
             }
             for (int i = 0; i < state.field.getCols(); ++i) {
-                graphics2D.drawLine(this.gridX + i * this.cellWidth, this.gridY,
-                        this.gridX + i * this.cellWidth, this.gridY + state.field.getCols() * this.cellHeight);
+                graphics2D.drawLine(this.gridX + i * this.cellSize, this.gridY,
+                        this.gridX + i * this.cellSize, this.gridY + state.field.getCols() * this.cellSize);
             }
         }
 
-        private static final int CELL_WIDTH_MIN = 5;
-        private static final int CELL_WIDTH_MAX = 60;
+        private static final int CELL_SIZE_MIN = 5;
+        private static final int CELL_SIZE_MAX = 60;
 
-        private int cellWidth = 20;
-        private int cellHeight = 20;
+        private int cellSize = 20;
         private int gridX = 100;
         private int gridY = 100;
 
@@ -255,15 +253,15 @@ public class GameOfLifeFrame extends JFrame {
             Point position = e.getPoint();
             GameOfLifeModel.State state = GameOfLifeFrame.this.game.getState();
 
-            int gridWidth  = this.cellWidth * state.field.getCols();
-            int gridHeight = this.cellHeight * state.field.getRows();
+            int gridWidth  = this.cellSize * state.field.getCols();
+            int gridHeight = this.cellSize * state.field.getRows();
 
             if (new Rectangle(this.gridX, this.gridY, gridWidth, gridHeight).contains(position)) {
                 position.x -= this.gridX;
                 position.y -= this.gridY;
 
-                int x = position.x / this.cellWidth;
-                int y = position.y / this.cellHeight;
+                int x = position.x / this.cellSize;
+                int y = position.y / this.cellSize;
 
                 GameOfLifeFrame.this.game.toggleCell(y, x);
                 this.repaint();
@@ -327,12 +325,10 @@ public class GameOfLifeFrame extends JFrame {
 
             int rotation = e.getWheelRotation();
 
-            this.cellWidth += (-rotation) * 5;
-            this.cellHeight += (-rotation) * 5;
+            this.cellSize += (-rotation) * 5;
 
             // clamp
-            this.cellWidth = Math.max(CentralPanel.CELL_WIDTH_MIN, Math.min(CentralPanel.CELL_WIDTH_MAX, cellWidth));
-            this.cellHeight = Math.max(CentralPanel.CELL_WIDTH_MIN, Math.min(CentralPanel.CELL_WIDTH_MAX, cellHeight));
+            this.cellSize = Math.max(CentralPanel.CELL_SIZE_MIN, Math.min(CentralPanel.CELL_SIZE_MAX, this.cellSize));
 
             this.repaint();
         }
