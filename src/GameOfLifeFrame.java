@@ -19,33 +19,13 @@ public class GameOfLifeFrame extends JFrame {
             throw new IllegalArgumentException("game is null");
         }
 
-        // game
-        mGame = game;
-        mGameInitialState = game.getState();
+        // game info
+        this.game = game;
+        this.gameInitialState = game.getState().copy();
 
-        // update thread
-        mUpdating = false;
-        mTimeDelta = (M_TIME_DELTA_MIN + M_TIME_DELTA_MAX) / 2;
-        mUpdateThread = new Thread(() -> {
-            while (true) {
-                if (!mUpdating) {
-                    continue;
-                }
-
-                long before = System.currentTimeMillis();
-
-                nextStep();
-                mCentralPanel.repaint();
-
-                while (System.currentTimeMillis() - before <= mTimeDelta);
-            }
-        });
-        mUpdateThread.setDaemon(true);
-        mUpdateThread.start();
-
-        // frame
+        // setting up frame
         this.setTitle("GoL");
-        this.setSize(M_PANEL_INIT_WIDTH, M_PANEL_INIT_HEIGHT);
+        this.setSize(PANEL_INIT_WIDTH, PANEL_INIT_HEIGHT);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setLayout(new BorderLayout());
         this.addKeyListener(new KeyListener() {
@@ -54,250 +34,276 @@ public class GameOfLifeFrame extends JFrame {
 
             @Override
             public void keyPressed(KeyEvent e) {
-                if (mPresesedKeys.contains(Integer.valueOf(e.getKeyCode()))) {
+                if (GameOfLifeFrame.this.pressedKeys.contains(Integer.valueOf(e.getKeyCode()))) {
                     return;
                 }
 
                 switch (e.getKeyCode()) {
                     case KeyEvent.VK_R:
-                        mGame.setState(mGameInitialState);
-                        mCentralPanel.reset();
-                        mCentralPanel.repaint();
+                        GameOfLifeFrame.this.Reset();
                         break;
                     case KeyEvent.VK_C:
-                        mGame.clearField();
-                        mCentralPanel.repaint();
+                        GameOfLifeFrame.this.Clear();
                         break;
                     case KeyEvent.VK_SPACE:
-                        if (mUpdating) {
-                            mButtons.get("Play").setText("Play");
-                            mButtons.get("Step").setEnabled(true);
-                        } else {
-                            mButtons.get("Play").setText("Stop");
-                            mButtons.get("Step").setEnabled(false);
-                        }
-
-                        mUpdating = !mUpdating;
+                        GameOfLifeFrame.this.TogglePlay();
                         break;
                     case KeyEvent.VK_ENTER:
-                        if (!mUpdating) {
-                            nextStep();
+                        if (!GameOfLifeFrame.this.updating) {
+                            GameOfLifeFrame.this.Step();
                         }
                         break;
                     default:
                         return;
                 }
 
-                mPresesedKeys.add(Integer.valueOf(e.getKeyCode()));
+                GameOfLifeFrame.this.pressedKeys.add(Integer.valueOf(e.getKeyCode()));
             }
 
             @Override
             public void keyReleased(KeyEvent e) {
-                mPresesedKeys.remove(Integer.valueOf(e.getKeyCode()));
+                GameOfLifeFrame.this.pressedKeys.remove(Integer.valueOf(e.getKeyCode()));
             }
         });
         this.setFocusable(true);
 
         // panels
-        mCentralPanel = new CentralPanel();
-        mCentralPanel.setLayout(null);
-        mCentralPanel.addMouseListener(mCentralPanel);
-        mCentralPanel.addMouseMotionListener(mCentralPanel);
-        mCentralPanel.addMouseWheelListener(mCentralPanel);
+        this.centralPanel.setLayout(null);
+        this.centralPanel.addMouseListener(this.centralPanel);
+        this.centralPanel.addMouseMotionListener(this.centralPanel);
+        this.centralPanel.addMouseWheelListener(this.centralPanel);
 
-        mBottomPanel = new JPanel();
-        mBottomPanel.setLayout(new BorderLayout());
-        mBottomPanel.setBackground(Color.BLUE);
+        this.bottomPanel.setLayout(new BorderLayout());
+        this.bottomPanel.setBackground(Color.BLUE);
 
-        mBottomLeftPanel = new JPanel();
-        mBottomLeftPanel.setLayout(new FlowLayout());
-        mBottomLeftPanel.setBackground(Color.RED);
-        
-        mBottomRightPanel = new JPanel();
-        mBottomRightPanel.setLayout(new FlowLayout());
-        mBottomRightPanel.setBackground(Color.GREEN);
+        this.bottomPanelLeft.setLayout(new FlowLayout());
+        this.bottomPanelLeft.setBackground(Color.RED);
+
+        this.bottomPanelRight.setLayout(new FlowLayout());
+        this.bottomPanelRight.setBackground(Color.GREEN);
 
         // buttons
-        mButtons = new HashMap<>();
-        mButtons.put("Clear", new JButton("Clear"));
-        mButtons.put("Reset", new JButton("Reset"));
-        mButtons.put("Play",  new JButton("Play"));
-        mButtons.put("Step",  new JButton("Step"));
+        this.buttons.put("Clear", new JButton("Clear"));
+        this.buttons.put("Reset", new JButton("Reset"));
+        this.buttons.put("Play",  new JButton("Play"));
+        this.buttons.put("Step",  new JButton("Step"));
 
-        for (JButton button : mButtons.values()) {
+        this.buttons.get("Clear").addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                GameOfLifeFrame.this.Clear();
+            }
+        });
+        this.buttons.get("Reset").addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                GameOfLifeFrame.this.Reset();
+            }
+        });
+        this.buttons.get("Play").addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                GameOfLifeFrame.this.TogglePlay();
+            }
+        });
+        this.buttons.get("Step").addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                GameOfLifeFrame.this.Step();
+            }
+        });
+
+        for (JButton button : this.buttons.values()) {
             button.setFocusable(false);
-            button.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent event) {
-                    Object source = event.getSource();
-
-                    if (source == mButtons.get("Clear")) {
-                        mGame.clearField();
-                        mCentralPanel.repaint();
-                    } else if (source == mButtons.get("Reset")) {
-                        mGame.setState(mGameInitialState);
-                        mCentralPanel.reset();
-                        mCentralPanel.repaint();
-                    } else if (source == mButtons.get("Play")) {
-                        var button = (JButton)source;
-
-                        if (mUpdating) {
-                            button.setText("Play");
-                            mButtons.get("Step").setEnabled(true);
-                        } else {
-                            button.setText("Stop");
-                            mButtons.get("Step").setEnabled(false);
-                        }
-
-                        mUpdating = !mUpdating;
-                    } else if (source == mButtons.get("Step")) {
-                        nextStep();
-                    }
-                }
-            });
-
         }
 
         // slider
-        mSlider = new JSlider(JSlider.HORIZONTAL, M_TIME_DELTA_MIN, M_TIME_DELTA_MAX, mTimeDelta);
-        mSlider.addChangeListener(new ChangeListener() {
+        this.slider.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
-                mTimeDelta = ((JSlider) e.getSource()).getValue();
+                GameOfLifeFrame.this.timeDelta = ((JSlider) e.getSource()).getValue();
             }
         });
-        mSlider.setFocusable(false);
-
-        // keys
-        mPresesedKeys = new HashSet<>();
+        this.slider.setFocusable(false);
         
-        // binding
-        mBottomLeftPanel.add(mButtons.get("Clear"));
-        mBottomLeftPanel.add(mButtons.get("Reset"));
-        mBottomLeftPanel.add(mButtons.get("Play"));
-        mBottomLeftPanel.add(mButtons.get("Step"));
+        // setting up layout
+        this.bottomPanelLeft.add(this.buttons.get("Clear"));
+        this.bottomPanelLeft.add(this.buttons.get("Reset"));
+        this.bottomPanelLeft.add(this.buttons.get("Play"));
+        this.bottomPanelLeft.add(this.buttons.get("Step"));
 
-        mBottomRightPanel.add(mSlider);
+        this.bottomPanelRight.add(this.slider);
 
-        mBottomPanel.add(mBottomLeftPanel, BorderLayout.WEST);
-        mBottomPanel.add(mBottomRightPanel, BorderLayout.EAST);
+        this.bottomPanel.add(this.bottomPanelLeft, BorderLayout.WEST);
+        this.bottomPanel.add(this.bottomPanelRight, BorderLayout.EAST);
         
-        this.add(mBottomPanel, BorderLayout.SOUTH);
-        this.add(mCentralPanel, BorderLayout.CENTER);
+        this.add(this.bottomPanel, BorderLayout.SOUTH);
+        this.add(this.centralPanel, BorderLayout.CENTER);
 
-        // visible
+        // starting update thread
+        this.updateThread.setDaemon(true);
+        this.updateThread.start();
+
+        // frame visible
         this.setVisible(true);
     }
 
-    private void nextStep() {
-        mGame.nextStep();
-        mCentralPanel.repaint();
+    /* Actions attached to buttons and keyboard */
+
+    public void Clear() {
+        this.game.clearField();
+        this.centralPanel.repaint();
     }
 
-    private GameOfLifeModel mGame;
-    private GameOfLifeModel.State mGameInitialState;
+    public void Reset() {
+        this.game.setState(this.gameInitialState);
+        // this.centralPanel.resetGrid();
+        this.centralPanel.repaint();
+    }
 
-    private Thread mUpdateThread;
-    private volatile boolean mUpdating;
-    private int mTimeDelta;
+    public void TogglePlay() {
+        JButton play = (JButton) this.buttons.get("Play");
+        JButton step = (JButton) this.buttons.get("Step");
 
-    private final int M_TIME_DELTA_MIN = 200;
-    private final int M_TIME_DELTA_MAX = 1000;
-
-    private final int M_PANEL_INIT_WIDTH = 800;
-    private final int M_PANEL_INIT_HEIGHT = 600;
-
-    private CentralPanel mCentralPanel;
-    private JPanel mBottomPanel;
-    private JPanel mBottomLeftPanel;
-    private JPanel mBottomRightPanel;
-
-    private Map<String, JButton> mButtons;
-    private JSlider mSlider;
-
-    private Set<Integer> mPresesedKeys;
-
-    private class CentralPanel extends JPanel implements MouseInputListener, MouseWheelListener {
-        public void reset() {
-            mGridX = 100;
-            mGridY = 100;
-            mCellWidth = 20;
-            mCellHeight = 20;
-            mMouseLastKnownPosition = null;
+        if (this.updating) {
+            play.setText("Play");
+            step.setEnabled(true);
+        } else {
+            play.setText("Stop");
+            step.setEnabled(false);
         }
 
+        this.updating = !this.updating;
+    }
+
+    private void Step() {
+        this.game.nextStep();
+        this.centralPanel.repaint();
+    }
+
+    /* Fields */
+
+    private static final int PANEL_INIT_WIDTH = 800;
+    private static final int PANEL_INIT_HEIGHT = 600;
+    private static final int TIME_DELTA_MIN = 200;
+    private static final int TIME_DELTA_MAX = 1000;
+
+    private GameOfLifeModel game;
+    private GameOfLifeModel.State gameInitialState;
+
+    private int timeDelta = (TIME_DELTA_MIN + TIME_DELTA_MAX) / 2;
+
+    private CentralPanel centralPanel = new CentralPanel();
+    private JPanel bottomPanel        = new JPanel();
+    private JPanel bottomPanelLeft    = new JPanel();
+    private JPanel bottomPanelRight   = new JPanel();
+
+    private volatile boolean updating = false;
+    private Thread updateThread = new Thread(() -> {
+        while (true) {
+            if (!updating) {
+                continue;
+            }
+
+            long before = System.currentTimeMillis();
+
+            Step();
+            centralPanel.repaint();
+
+            while (System.currentTimeMillis() - before <= timeDelta);
+        }
+    });
+
+    private Map<String, JButton> buttons = new HashMap<>();
+
+    private JSlider slider = new JSlider(JSlider.HORIZONTAL, TIME_DELTA_MIN, TIME_DELTA_MAX, timeDelta);
+
+    private Set<Integer> pressedKeys = new HashSet<>();
+
+    private class CentralPanel extends JPanel implements MouseInputListener, MouseWheelListener {
+        public void resetGrid() {
+            this.gridX = 100;
+            this.gridY = 100;
+            this.cellWidth = 20;
+            this.cellHeight = 20;
+            this.mouseLastKnownPosition = null;
+        }
 
         @Override
         public void paint(Graphics graphics) {
             Graphics2D graphics2D = (Graphics2D) graphics;
 
-            graphics2D.setBackground(mBackgroundColor);
+            graphics2D.setBackground(this.colorBackground);
             graphics2D.clearRect(this.getBounds().x, this.getBounds().y, this.getWidth(), this.getHeight());
 
-            GameOfLifeModel.State state = mGame.getState();
+            GameOfLifeModel.State state = GameOfLifeFrame.this.game.getState();
 
             // draw field
-            for (int y = 0; y < state.field.length; ++y) {
-                for (int x = 0; x < state.field[y].length; ++x) {
-                    graphics2D.setPaint(state.field[y][x] > 0 ? mAliveCellColor : mDeadCellColor);
-                    graphics2D.fillRect(mGridX + x * mCellWidth, mGridY + y * mCellHeight, mCellWidth, mCellHeight);
+            for (int y = 0; y < state.field.getRows(); ++y) {
+                for (int x = 0; x < state.field.getCols(); ++x) {
+                    graphics2D.setPaint(state.field.get(y, x) > 0 ? this.colorAliveCell : this.colorDeadCell);
+                    graphics2D.fillRect(this.gridX + x * this.cellWidth, this.gridY + y * this.cellHeight, this.cellWidth, this.cellHeight);
                 }
             }
 
             // draw grid
             graphics2D.setPaint(Color.BLACK);
-            for (int i = 0; i < state.field.length; ++i) {
-                graphics2D.drawLine(mGridX, mGridY + i * mCellHeight, mGridX + state.field[0].length * mCellWidth, mGridY + i * mCellHeight);
+            for (int i = 0; i < state.field.getRows(); ++i) {
+                graphics2D.drawLine(this.gridX, this.gridY + i * this.cellHeight,
+                        this.gridX + state.field.getCols() * this.cellWidth, this.gridY + i * this.cellHeight);
             }
-            for (int i = 0; i < state.field[0].length; ++i) {
-                graphics2D.drawLine(mGridX + i * mCellWidth, mGridY, mGridX + i * mCellWidth, mGridY + state.field[0].length * mCellHeight);
+            for (int i = 0; i < state.field.getCols(); ++i) {
+                graphics2D.drawLine(this.gridX + i * this.cellWidth, this.gridY,
+                        this.gridX + i * this.cellWidth, this.gridY + state.field.getCols() * this.cellHeight);
             }
         }
 
-        private int M_CELL_WIDTH_MIN = 5;
-        private int M_CELL_WIDTH_MAX = 60;
-        private int mCellWidth  = 20;
-        private int mCellHeight = 20;
-        private int mGridX = 100;
-        private int mGridY = 100;
+        private static int CELL_WIDTH_MIN = 5;
+        private static int CELL_WIDTH_MAX = 60;
 
-        private Color mBackgroundColor = new Color(0xff505050); // grey
-        private Color mDeadCellColor   = new Color(0xff252525); // dark grey
-        private Color mAliveCellColor  = new Color(0xffFFB60B); // yellow-ish
+        private int cellWidth = 20;
+        private int cellHeight = 20;
+        private int gridX = 100;
+        private int gridY = 100;
 
-        private Point mMouseLastKnownPosition;
-        private Boolean mMouseInBounds;
+        private Color colorBackground = new Color(0xff505050); // grey
+        private Color colorDeadCell   = new Color(0xff252525); // dark grey
+        private Color colorAliveCell  = new Color(0xffFFB60B); // yellow-ish
+
+        private Point mouseLastKnownPosition;
+        private boolean mouseInBounds;
 
         @Override
         public void mouseClicked(MouseEvent e) {
-            if (mMouseInBounds == null || !mMouseInBounds) {
+            if (!this.mouseInBounds) {
                 return;
             }
 
             Point position = e.getPoint();
+            GameOfLifeModel.State state = GameOfLifeFrame.this.game.getState();
 
-            int gridWidth = mCellWidth * mGame.getState().field[0].length;
-            int gridHeight = mCellHeight * mGame.getState().field.length;
+            int gridWidth  = this.cellWidth * state.field.getCols();
+            int gridHeight = this.cellHeight * state.field.getRows();
 
-            if (new Rectangle(mGridX, mGridY, gridWidth, gridHeight).contains(position)) {
-                position.x -= mGridX;
-                position.y -= mGridY;
+            if (new Rectangle(this.gridX, this.gridY, gridWidth, gridHeight).contains(position)) {
+                position.x -= this.gridX;
+                position.y -= this.gridY;
 
-                int x = position.x / mCellWidth;
-                int y = position.y / mCellHeight;
+                int x = position.x / this.cellWidth;
+                int y = position.y / this.cellHeight;
 
-                mGame.toggleCell(y, x);
+                GameOfLifeFrame.this.game.toggleCell(y, x);
                 this.repaint();
             }
         }
 
         @Override
         public void mousePressed(MouseEvent e) {
-            if (mMouseInBounds == null || !mMouseInBounds) {
+            if (!this.mouseInBounds) {
                 return;
             }
 
-            mMouseLastKnownPosition = e.getPoint();
+            this.mouseLastKnownPosition = e.getPoint();
         }
 
         @Override
@@ -305,29 +311,29 @@ public class GameOfLifeFrame extends JFrame {
 
         @Override
         public void mouseEntered(MouseEvent e) {
-            mMouseInBounds = true;
+            this.mouseInBounds = true;
         }
 
         @Override
         public void mouseExited(MouseEvent e) {
-            mMouseInBounds = false;
+            this.mouseInBounds = false;
         }
 
         @Override
         public void mouseDragged(MouseEvent e) {
-            if (mMouseInBounds == null || mMouseLastKnownPosition == null) {
+            if (this.mouseLastKnownPosition == null) {
                 return;
             }
 
             Point currentPosition = e.getPoint();
 
-            int diffX = currentPosition.x - mMouseLastKnownPosition.x;
-            int diffY = currentPosition.y - mMouseLastKnownPosition.y;
+            int diffX = currentPosition.x - this.mouseLastKnownPosition.x;
+            int diffY = currentPosition.y - this.mouseLastKnownPosition.y;
 
-            mGridX += diffX;
-            mGridY += diffY;
+            this.gridX += diffX;
+            this.gridY += diffY;
 
-            mMouseLastKnownPosition = currentPosition;
+            this.mouseLastKnownPosition = currentPosition;
 
             this.repaint();
         }
@@ -335,14 +341,14 @@ public class GameOfLifeFrame extends JFrame {
         @Override
         public void mouseMoved(MouseEvent e) {}
 
-        private int clamp(int value, int min, int max) {
+        private static int clamp(int value, int min, int max) {
             return Math.max(min, Math.min(max, value));
         }
 
         @Override
         public void mouseWheelMoved(MouseWheelEvent e) {
             // seems like you don't need this check here
-            if (mMouseInBounds == null || !mMouseInBounds) {
+            if (!this.mouseInBounds) {
                 return;
             }
 
@@ -352,11 +358,11 @@ public class GameOfLifeFrame extends JFrame {
 
             int rotation = e.getWheelRotation();
 
-            mCellWidth += (-rotation) * 5;
-            mCellHeight += (-rotation) * 5;
+            this.cellWidth += (-rotation) * 5;
+            this.cellHeight += (-rotation) * 5;
 
-            mCellWidth = clamp(mCellWidth, M_CELL_WIDTH_MIN, M_CELL_WIDTH_MAX);
-            mCellHeight = clamp(mCellHeight, M_CELL_WIDTH_MIN, M_CELL_WIDTH_MAX);
+            this.cellWidth = clamp(this.cellWidth, this.CELL_WIDTH_MIN, this.CELL_WIDTH_MAX);
+            this.cellHeight = clamp(this.cellHeight, this.CELL_WIDTH_MIN, this.CELL_WIDTH_MAX);
 
             this.repaint();
         }

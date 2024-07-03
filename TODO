@@ -3,12 +3,12 @@
 - key bindings                           -- done (TODO(done): make bindings not depend on focus)
 -! move field                            -- done
 -! change field with clicks              -- done
--! scale field
-- refactor code
-- make app look fancy
--- fancy buttons
--- fancy slider
--- fancy colors
+-! scale field                           -- done
+- refactor code                          -- done
+-! make app look fancy
+--! fancy buttons
+--! fancy slider
+--! fancy colors
 
 - menu bar
 -! load state from file
