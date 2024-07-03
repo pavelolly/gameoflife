@@ -38,6 +38,12 @@ public class GameOfLifeModel {
         mBackField.clear();
     }
 
+    public void toggleCell(int row, int col) {
+        mField.set(row, col, (byte)(mField.get(row, col) > 0 ? 0 : 1));
+        mBackField.set(row, col, (byte)(mBackField.get(row, col) > 0 ? 0 : 1));
+    }
+
+
     public void setState(State state) {
         mField     = new Field(state.field);
         mBackField = new Field(state.field);

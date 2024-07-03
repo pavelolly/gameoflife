@@ -263,14 +263,34 @@ public class GameOfLifeFrame extends JFrame {
         private Boolean mMouseInBounds;
 
         @Override
-        public void mouseClicked(MouseEvent e) {}
+        public void mouseClicked(MouseEvent e) {
+            if (mMouseInBounds == null || !mMouseInBounds) {
+                return;
+            }
+
+            Point position = e.getPoint();
+
+            int gridWidth = mCellWidth * mGame.getState().field[0].length;
+            int gridHeight = mCellHeight * mGame.getState().field.length;
+
+            if (new Rectangle(mGridX, mGridY, gridWidth, gridHeight).contains(position)) {
+                position.x -= mGridX;
+                position.y -= mGridY;
+
+                int x = position.x / mCellWidth;
+                int y = position.y / mCellHeight;
+
+                mGame.toggleCell(y, x);
+                this.repaint();
+            }
+        }
 
         @Override
         public void mousePressed(MouseEvent e) {
             if (mMouseInBounds == null || !mMouseInBounds) {
                 return;
             }
-            // System.out.println("Pressed");
+
             mMouseLastKnownPosition = e.getPoint();
         }
 
@@ -279,19 +299,16 @@ public class GameOfLifeFrame extends JFrame {
 
         @Override
         public void mouseEntered(MouseEvent e) {
-            // System.out.println("Entered");
             mMouseInBounds = true;
         }
 
         @Override
         public void mouseExited(MouseEvent e) {
-            // System.out.println("Exited");
             mMouseInBounds = false;
         }
 
         @Override
         public void mouseDragged(MouseEvent e) {
-            // System.out.println("Dragged");
             if (mMouseInBounds == null || mMouseLastKnownPosition == null) {
                 return;
             }
