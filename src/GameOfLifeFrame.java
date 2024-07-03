@@ -9,8 +9,6 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import javax.swing.event.MouseInputListener;
 
 public class GameOfLifeFrame extends JFrame {
@@ -21,7 +19,7 @@ public class GameOfLifeFrame extends JFrame {
 
         // game info
         this.game = game;
-        this.gameInitialState = game.getState().copy();
+        this.gameResetState = game.getState().copy();
 
         // setting up frame
         this.setTitle("GoL");
@@ -34,7 +32,7 @@ public class GameOfLifeFrame extends JFrame {
 
             @Override
             public void keyPressed(KeyEvent e) {
-                if (GameOfLifeFrame.this.pressedKeys.contains(Integer.valueOf(e.getKeyCode()))) {
+                if (GameOfLifeFrame.this.pressedKeys.contains(e.getKeyCode())) {
                     return;
                 }
 
@@ -57,12 +55,12 @@ public class GameOfLifeFrame extends JFrame {
                         return;
                 }
 
-                GameOfLifeFrame.this.pressedKeys.add(Integer.valueOf(e.getKeyCode()));
+                GameOfLifeFrame.this.pressedKeys.add(e.getKeyCode());
             }
 
             @Override
             public void keyReleased(KeyEvent e) {
-                GameOfLifeFrame.this.pressedKeys.remove(Integer.valueOf(e.getKeyCode()));
+                GameOfLifeFrame.this.pressedKeys.remove(e.getKeyCode());
             }
         });
         this.setFocusable(true);
@@ -88,42 +86,17 @@ public class GameOfLifeFrame extends JFrame {
         this.buttons.put("Play",  new JButton("Play"));
         this.buttons.put("Step",  new JButton("Step"));
 
-        this.buttons.get("Clear").addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                GameOfLifeFrame.this.Clear();
-            }
-        });
-        this.buttons.get("Reset").addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                GameOfLifeFrame.this.Reset();
-            }
-        });
-        this.buttons.get("Play").addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                GameOfLifeFrame.this.TogglePlay();
-            }
-        });
-        this.buttons.get("Step").addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                GameOfLifeFrame.this.Step();
-            }
-        });
+        this.buttons.get("Clear").addActionListener(_ -> GameOfLifeFrame.this.Clear());
+        this.buttons.get("Reset").addActionListener(_ -> GameOfLifeFrame.this.Reset());
+        this.buttons.get("Play").addActionListener(_ -> GameOfLifeFrame.this.TogglePlay());
+        this.buttons.get("Step").addActionListener(_ -> GameOfLifeFrame.this.Step());
 
         for (JButton button : this.buttons.values()) {
             button.setFocusable(false);
         }
 
         // slider
-        this.slider.addChangeListener(new ChangeListener() {
-            @Override
-            public void stateChanged(ChangeEvent e) {
-                GameOfLifeFrame.this.timeDelta = ((JSlider) e.getSource()).getValue();
-            }
-        });
+        this.slider.addChangeListener(e -> GameOfLifeFrame.this.timeDelta = ((JSlider) e.getSource()).getValue());
         this.slider.setFocusable(false);
         
         // setting up layout
@@ -156,14 +129,14 @@ public class GameOfLifeFrame extends JFrame {
     }
 
     public void Reset() {
-        this.game.setState(this.gameInitialState);
+        this.game.setState(this.gameResetState);
         // this.centralPanel.resetGrid();
         this.centralPanel.repaint();
     }
 
     public void TogglePlay() {
-        JButton play = (JButton) this.buttons.get("Play");
-        JButton step = (JButton) this.buttons.get("Step");
+        JButton play = this.buttons.get("Play");
+        JButton step = this.buttons.get("Step");
 
         if (this.updating) {
             play.setText("Play");
@@ -188,18 +161,18 @@ public class GameOfLifeFrame extends JFrame {
     private static final int TIME_DELTA_MIN = 200;
     private static final int TIME_DELTA_MAX = 1000;
 
-    private GameOfLifeModel game;
-    private GameOfLifeModel.State gameInitialState;
+    private final GameOfLifeModel game;
+    private GameOfLifeModel.State gameResetState;
 
     private int timeDelta = (TIME_DELTA_MIN + TIME_DELTA_MAX) / 2;
 
-    private CentralPanel centralPanel = new CentralPanel();
-    private JPanel bottomPanel        = new JPanel();
-    private JPanel bottomPanelLeft    = new JPanel();
-    private JPanel bottomPanelRight   = new JPanel();
+    private final CentralPanel centralPanel = new CentralPanel();
+    private final JPanel bottomPanel        = new JPanel();
+    private final JPanel bottomPanelLeft    = new JPanel();
+    private final JPanel bottomPanelRight   = new JPanel();
 
     private volatile boolean updating = false;
-    private Thread updateThread = new Thread(() -> {
+    private final Thread updateThread = new Thread(() -> {
         while (true) {
             if (!updating) {
                 continue;
@@ -214,11 +187,11 @@ public class GameOfLifeFrame extends JFrame {
         }
     });
 
-    private Map<String, JButton> buttons = new HashMap<>();
+    private final Map<String, JButton> buttons = new HashMap<>();
 
-    private JSlider slider = new JSlider(JSlider.HORIZONTAL, TIME_DELTA_MIN, TIME_DELTA_MAX, timeDelta);
+    private final JSlider slider = new JSlider(JSlider.HORIZONTAL, TIME_DELTA_MIN, TIME_DELTA_MAX, timeDelta);
 
-    private Set<Integer> pressedKeys = new HashSet<>();
+    private final Set<Integer> pressedKeys = new HashSet<>();
 
     private class CentralPanel extends JPanel implements MouseInputListener, MouseWheelListener {
         public void resetGrid() {
@@ -258,8 +231,8 @@ public class GameOfLifeFrame extends JFrame {
             }
         }
 
-        private static int CELL_WIDTH_MIN = 5;
-        private static int CELL_WIDTH_MAX = 60;
+        private static final int CELL_WIDTH_MIN = 5;
+        private static final int CELL_WIDTH_MAX = 60;
 
         private int cellWidth = 20;
         private int cellHeight = 20;
@@ -341,10 +314,6 @@ public class GameOfLifeFrame extends JFrame {
         @Override
         public void mouseMoved(MouseEvent e) {}
 
-        private static int clamp(int value, int min, int max) {
-            return Math.max(min, Math.min(max, value));
-        }
-
         @Override
         public void mouseWheelMoved(MouseWheelEvent e) {
             // seems like you don't need this check here
@@ -361,8 +330,9 @@ public class GameOfLifeFrame extends JFrame {
             this.cellWidth += (-rotation) * 5;
             this.cellHeight += (-rotation) * 5;
 
-            this.cellWidth = clamp(this.cellWidth, this.CELL_WIDTH_MIN, this.CELL_WIDTH_MAX);
-            this.cellHeight = clamp(this.cellHeight, this.CELL_WIDTH_MIN, this.CELL_WIDTH_MAX);
+            // clamp
+            this.cellWidth = Math.max(CentralPanel.CELL_WIDTH_MIN, Math.min(CentralPanel.CELL_WIDTH_MAX, cellWidth));
+            this.cellHeight = Math.max(CentralPanel.CELL_WIDTH_MIN, Math.min(CentralPanel.CELL_WIDTH_MAX, cellHeight));
 
             this.repaint();
         }
