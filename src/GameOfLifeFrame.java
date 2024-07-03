@@ -11,6 +11,7 @@ import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.MouseInputListener;
 
 public class GameOfLifeFrame extends JFrame {
     public GameOfLifeFrame(GameOfLifeModel game) {
@@ -60,7 +61,7 @@ public class GameOfLifeFrame extends JFrame {
                 switch (e.getKeyCode()) {
                     case KeyEvent.VK_R:
                         mGame.setState(mGameInitialState);
-                        mCentralPanel.resetPosition();
+                        mCentralPanel.reset();
                         mCentralPanel.repaint();
                         break;
                     case KeyEvent.VK_C:
@@ -102,6 +103,7 @@ public class GameOfLifeFrame extends JFrame {
         mCentralPanel.setLayout(null);
         mCentralPanel.addMouseListener(mCentralPanel);
         mCentralPanel.addMouseMotionListener(mCentralPanel);
+        mCentralPanel.addMouseWheelListener(mCentralPanel);
 
         mBottomPanel = new JPanel();
         mBottomPanel.setLayout(new BorderLayout());
@@ -134,7 +136,7 @@ public class GameOfLifeFrame extends JFrame {
                         mCentralPanel.repaint();
                     } else if (source == mButtons.get("Reset")) {
                         mGame.setState(mGameInitialState);
-                        mCentralPanel.resetPosition();
+                        mCentralPanel.reset();
                         mCentralPanel.repaint();
                     } else if (source == mButtons.get("Play")) {
                         var button = (JButton)source;
@@ -215,10 +217,12 @@ public class GameOfLifeFrame extends JFrame {
 
     private Set<Integer> mPresesedKeys;
 
-    private class CentralPanel extends JPanel implements MouseListener, MouseMotionListener {
-        public void resetPosition() {
+    private class CentralPanel extends JPanel implements MouseInputListener, MouseWheelListener {
+        public void reset() {
             mGridX = 100;
             mGridY = 100;
+            mCellWidth = 20;
+            mCellHeight = 20;
             mMouseLastKnownPosition = null;
         }
 
@@ -250,6 +254,8 @@ public class GameOfLifeFrame extends JFrame {
             }
         }
 
+        private int M_CELL_WIDTH_MIN = 5;
+        private int M_CELL_WIDTH_MAX = 60;
         private int mCellWidth  = 20;
         private int mCellHeight = 20;
         private int mGridX = 100;
@@ -328,5 +334,31 @@ public class GameOfLifeFrame extends JFrame {
 
         @Override
         public void mouseMoved(MouseEvent e) {}
+
+        private int clamp(int value, int min, int max) {
+            return Math.max(min, Math.min(max, value));
+        }
+
+        @Override
+        public void mouseWheelMoved(MouseWheelEvent e) {
+            // seems like you don't need this check here
+            if (mMouseInBounds == null || !mMouseInBounds) {
+                return;
+            }
+
+            if (e.getScrollType() != MouseWheelEvent.WHEEL_UNIT_SCROLL) {
+                return;
+            }
+
+            int rotation = e.getWheelRotation();
+
+            mCellWidth += (-rotation) * 5;
+            mCellHeight += (-rotation) * 5;
+
+            mCellWidth = clamp(mCellWidth, M_CELL_WIDTH_MIN, M_CELL_WIDTH_MAX);
+            mCellHeight = clamp(mCellHeight, M_CELL_WIDTH_MIN, M_CELL_WIDTH_MAX);
+
+            this.repaint();
+        }
     }
 }

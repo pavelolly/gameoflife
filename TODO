@@ -2,12 +2,17 @@
 - make slider with speed of simulation   -- done
 - key bindings                           -- done (TODO(done): make bindings not depend on focus)
 -! move field                            -- done
--! change field with clicks
+-! change field with clicks              -- done
 -! scale field
-- menu bar
-- make everything fancy
+- refactor code
+- make app look fancy
+-- fancy buttons
+-- fancy slider
+-- fancy colors
 
+- menu bar
 -! load state from file
 -?- add colors to state (optional)
 -! make default config file
 -! save state from current
+- samples
