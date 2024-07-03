@@ -9,6 +9,7 @@
 --! fancy buttons
 --! fancy slider
 --! fancy colors
+- repaint once in a loop
 
 - menu bar
 -! load state from file

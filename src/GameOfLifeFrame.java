@@ -5,10 +5,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.JSlider;
+import javax.swing.*;
 import javax.swing.event.MouseInputListener;
 
 public class GameOfLifeFrame extends JFrame {
@@ -81,15 +78,20 @@ public class GameOfLifeFrame extends JFrame {
         this.bottomPanelRight.setBackground(Color.GREEN);
 
         // buttons
-        this.buttons.put("Clear", new JButton("Clear"));
-        this.buttons.put("Reset", new JButton("Reset"));
-        this.buttons.put("Play",  new JButton("Play"));
-        this.buttons.put("Step",  new JButton("Step"));
+        this.buttonIcons.put("Reset", new ImageIcon("icons/undo.png"));
+        this.buttonIcons.put("Play", new ImageIcon("icons/play-button-arrowhead.png"));
+        this.buttonIcons.put("Stop", new ImageIcon("icons/pause.png"));
+        this.buttonIcons.put("Step", new ImageIcon("icons/right.png"));
 
-        this.buttons.get("Clear").addActionListener(_ -> GameOfLifeFrame.this.Clear());
-        this.buttons.get("Reset").addActionListener(_ -> GameOfLifeFrame.this.Reset());
-        this.buttons.get("Play").addActionListener(_ -> GameOfLifeFrame.this.TogglePlay());
-        this.buttons.get("Step").addActionListener(_ -> GameOfLifeFrame.this.Step());
+        this.buttons.put("Clear", new JButton("Clear"));
+        this.buttons.put("Reset", new JButton());
+        this.buttons.put("Play",  new JButton());
+        this.buttons.put("Step",  new JButton());
+
+        this.buttons.get("Clear").addActionListener(_ -> this.Clear());
+        this.buttons.get("Reset").addActionListener(_ -> this.Reset());
+        this.buttons.get("Play").addActionListener(_ -> this.TogglePlay());
+        this.buttons.get("Step").addActionListener(_ -> this.Step());
 
         for (JButton button : this.buttons.values()) {
             button.setFocusable(false);
@@ -139,10 +141,10 @@ public class GameOfLifeFrame extends JFrame {
         JButton step = this.buttons.get("Step");
 
         if (this.updating) {
-            play.setText("Play");
+            // play.setText("Play");
             step.setEnabled(true);
         } else {
-            play.setText("Stop");
+            // play.setText("Stop");
             step.setEnabled(false);
         }
 
@@ -188,6 +190,7 @@ public class GameOfLifeFrame extends JFrame {
     });
 
     private final Map<String, JButton> buttons = new HashMap<>();
+    private final Map<String, ImageIcon> buttonIcons = new HashMap<>();
 
     private final JSlider slider = new JSlider(JSlider.HORIZONTAL, TIME_DELTA_MIN, TIME_DELTA_MAX, timeDelta);
 
