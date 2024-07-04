@@ -1,23 +1,23 @@
-ROWS = 10
-COLS = 10
+ROWS = 10;
+COLS = 10;
 
 CHUNKS = {
     {
-FIELD = . . . . .
+CHUNK = . . . . .
         . . * . .
         . . . * .
         . * * * .
         . . . . .;
-ROW = 0 ;
-COL = 0 ;
+ROW = 0;
+COL = 0;
     }
     {
-FIELD = . . . . .
+CHUNK = . . . . .
         . . * . .
         . . . * .
         . * * * .
         . . . . . ;
-ROW = 0 ;
-COL = 5 ;
+ROW = 0;
+COL = 5;
     }
 }
