@@ -9,6 +9,7 @@
 --! fancy buttons
 --! fancy slider
 --! fancy colors
+-- try get rid of magical numbers
 - repaint once in a loop
 
 - menu bar

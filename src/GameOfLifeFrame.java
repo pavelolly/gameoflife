@@ -1,10 +1,14 @@
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.event.MouseInputListener;
 
@@ -14,13 +18,26 @@ public class GameOfLifeFrame extends JFrame {
             throw new IllegalArgumentException("game is null");
         }
 
-        // game info
         this.game = game;
         this.gameResetState = game.getState().copy();
 
-        // setting up frame
+        // order matters (is it bad?)
+        this.setupFrame();
+        this.setupPanels();
+        this.setupButtons();
+        this.setupSlider();
+        this.setupLayout();
+        this.setupUpdateThread();
+
+        // frame visible
+        this.setVisible(true);
+    }
+
+    /* Setting up */
+
+    private void setupFrame() {
         this.setTitle("GoL");
-        this.setSize(PANEL_INIT_WIDTH, PANEL_INIT_HEIGHT);
+        this.setSize(GameOfLifeFrame.PANEL_INIT_WIDTH, GameOfLifeFrame.PANEL_INIT_HEIGHT);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setLayout(new BorderLayout());
         this.addKeyListener(new KeyListener() {
@@ -29,11 +46,13 @@ public class GameOfLifeFrame extends JFrame {
 
             @Override
             public void keyPressed(KeyEvent e) {
-                if (GameOfLifeFrame.this.pressedKeys.contains(e.getKeyCode())) {
+                int keyCode = e.getKeyCode();
+
+                if (GameOfLifeFrame.this.pressedKeys.contains(keyCode)) {
                     return;
                 }
 
-                switch (e.getKeyCode()) {
+                switch (keyCode) {
                     case KeyEvent.VK_R:
                         GameOfLifeFrame.this.Reset();
                         break;
@@ -52,7 +71,7 @@ public class GameOfLifeFrame extends JFrame {
                         return;
                 }
 
-                GameOfLifeFrame.this.pressedKeys.add(e.getKeyCode());
+                GameOfLifeFrame.this.pressedKeys.add(keyCode);
             }
 
             @Override
@@ -61,8 +80,9 @@ public class GameOfLifeFrame extends JFrame {
             }
         });
         this.setFocusable(true);
+    }
 
-        // panels
+    private void setupPanels() {
         this.centralPanel.setLayout(null);
         this.centralPanel.addMouseListener(this.centralPanel);
         this.centralPanel.addMouseMotionListener(this.centralPanel);
@@ -71,37 +91,75 @@ public class GameOfLifeFrame extends JFrame {
         this.bottomPanel.setLayout(new BorderLayout());
         this.bottomPanel.setBackground(Color.BLUE);
 
-        this.bottomPanelLeft.setLayout(new FlowLayout());
+        this.bottomPanelLeft.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 5));
         this.bottomPanelLeft.setBackground(Color.RED);
 
         this.bottomPanelRight.setLayout(new FlowLayout());
         this.bottomPanelRight.setBackground(Color.GREEN);
+    }
 
-        // buttons
-        this.buttonIcons.put("Reset", new ImageIcon("icons/undo.png"));
-        this.buttonIcons.put("Play", new ImageIcon("icons/play-button-arrowhead.png"));
-        this.buttonIcons.put("Stop", new ImageIcon("icons/pause.png"));
-        this.buttonIcons.put("Step", new ImageIcon("icons/right.png"));
+    private void setupButtons() {
+        try {
+            this.buttonImages.put("Reset", ImageIO.read(new File("icons/undo512x512.png")));
+            this.buttonImages.put("Play", ImageIO.read(new File("icons/play-button-arrowhead512x512.png")));
+            this.buttonImages.put("Stop", ImageIO.read(new File("icons/pause512x512.png")));
+            this.buttonImages.put("Step", ImageIO.read(new File("icons/right512x512.png")));
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
 
         this.buttons.put("Clear", new JButton("Clear"));
         this.buttons.put("Reset", new JButton());
         this.buttons.put("Play",  new JButton());
         this.buttons.put("Step",  new JButton());
 
-        this.buttons.get("Clear").addActionListener(_ -> this.Clear());
-        this.buttons.get("Reset").addActionListener(_ -> this.Reset());
-        this.buttons.get("Play").addActionListener(_ -> this.TogglePlay());
-        this.buttons.get("Step").addActionListener(_ -> this.Step());
+        BufferedImage resetImage = this.buttonImages.get("Reset");
+        BufferedImage playImage = this.buttonImages.get("Play");
+        BufferedImage stopImage = this.buttonImages.get("Stop");
+        BufferedImage stepImage = this.buttonImages.get("Step");
+
+        JButton clearButton = this.buttons.get("Clear");
+        JButton resetButton = this.buttons.get("Reset");
+        JButton playButton = this.buttons.get("Play");
+        JButton stepButton = this.buttons.get("Step");
+
+        ComponentListener componentListener = new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                JButton button = (JButton) e.getComponent();
+
+                if (button == resetButton) {
+                    setScaledIcon(button, resetImage, 0.85);
+                } else if (button == playButton) {
+                    setScaledIcon(button, playImage, 0.7);
+                } else if (button == stepButton) {
+                    setScaledIcon(button, stepImage, 1);
+                }
+            }
+        };
+
+        resetButton.setPreferredSize(new Dimension(30, 30));
+        playButton.setPreferredSize(new Dimension(50, 50));
+        stepButton.setPreferredSize(new Dimension(30, 30));
+
+        clearButton.addActionListener(_ -> this.Clear());
+        resetButton.addActionListener(_ -> this.Reset());
+        playButton.addActionListener(_ -> this.TogglePlay());
+        stepButton.addActionListener(_ -> this.Step());
 
         for (JButton button : this.buttons.values()) {
+            button.addComponentListener(componentListener);
             button.setFocusable(false);
         }
+    }
 
-        // slider
+    private void setupSlider() {
         this.slider.addChangeListener(e -> GameOfLifeFrame.this.timeDelta = ((JSlider) e.getSource()).getValue());
         this.slider.setFocusable(false);
-        
-        // setting up layout
+    }
+
+    private void setupLayout() {
         this.bottomPanelLeft.add(this.buttons.get("Clear"));
         this.bottomPanelLeft.add(this.buttons.get("Reset"));
         this.bottomPanelLeft.add(this.buttons.get("Play"));
@@ -111,40 +169,48 @@ public class GameOfLifeFrame extends JFrame {
 
         this.bottomPanel.add(this.bottomPanelLeft, BorderLayout.WEST);
         this.bottomPanel.add(this.bottomPanelRight, BorderLayout.EAST);
-        
+
         this.add(this.bottomPanel, BorderLayout.SOUTH);
         this.add(this.centralPanel, BorderLayout.CENTER);
+    }
 
-        // starting update thread
+    private void setupUpdateThread() {
         this.updateThread.setDaemon(true);
         this.updateThread.start();
-
-        // frame visible
-        this.setVisible(true);
     }
+
+    /**/
+
+    private static void setScaledIcon(JButton button, BufferedImage image, double factor) {
+        double width = button.getPreferredSize().width * factor;
+        double height = button.getPreferredSize().height * factor;
+
+        button.setIcon(new ImageIcon(image.getScaledInstance((int)width, (int)height, Image.SCALE_SMOOTH)));
+    }
+
 
     /* Actions attached to buttons and keyboard */
 
-    public void Clear() {
+    private void Clear() {
         this.game.clearField();
         this.centralPanel.repaint();
     }
 
-    public void Reset() {
+    private void Reset() {
         this.game.setState(this.gameResetState);
         // this.centralPanel.resetGrid();
         this.centralPanel.repaint();
     }
 
-    public void TogglePlay() {
+    private void TogglePlay() {
         JButton play = this.buttons.get("Play");
         JButton step = this.buttons.get("Step");
 
         if (this.updating) {
-            // play.setText("Play");
+            setScaledIcon(play, this.buttonImages.get("Play"), 0.7);
             step.setEnabled(true);
         } else {
-            // play.setText("Stop");
+            setScaledIcon(play, this.buttonImages.get("Stop"), 0.7);
             step.setEnabled(false);
         }
 
@@ -190,7 +256,7 @@ public class GameOfLifeFrame extends JFrame {
     });
 
     private final Map<String, JButton> buttons = new HashMap<>();
-    private final Map<String, ImageIcon> buttonIcons = new HashMap<>();
+    private final Map<String, BufferedImage> buttonImages = new HashMap<>();
 
     private final JSlider slider = new JSlider(JSlider.HORIZONTAL, TIME_DELTA_MIN, TIME_DELTA_MAX, timeDelta);
 
