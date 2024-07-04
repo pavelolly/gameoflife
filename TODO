@@ -5,16 +5,26 @@
 -! change field with clicks              -- done
 -! scale field                           -- done
 - refactor code                          -- done
--! make app look fancy
---! fancy buttons
---! fancy slider
---! fancy colors
+-! make app look fancy                   -- done
+--! fancy buttons                        -- done
+--! fancy slider                         -- done
+--! fancy colors                         -- done
 -- try get rid of magical numbers
 - repaint once in a loop
+- fps
 
-- menu bar
 -! load state from file
 -?- add colors to state (optional)
 -! make default config file
 -! save state from current
-- samples
+
+- menu bar
+-! file section
+-! samples section
+-! rules section
+-! help section
+-!? color schemes (optional)
+
+- make everything fancier
+-- round buttons
+-- current time delta under slider

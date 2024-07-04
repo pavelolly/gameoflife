@@ -3,13 +3,11 @@ import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import javax.swing.border.Border;
 import javax.swing.event.MouseInputListener;
 
 public class GameOfLifeFrame extends JFrame {
@@ -89,13 +87,13 @@ public class GameOfLifeFrame extends JFrame {
         this.centralPanel.addMouseWheelListener(this.centralPanel);
 
         this.bottomPanel.setLayout(new BorderLayout());
-        this.bottomPanel.setBackground(Color.BLUE);
+        this.bottomPanel.setBackground(colorBottomPanelBackground);
 
         this.bottomPanelLeft.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 5));
-        this.bottomPanelLeft.setBackground(Color.RED);
+        this.bottomPanelLeft.setBackground(colorBottomPanelBackground);
 
         this.bottomPanelRight.setLayout(new FlowLayout());
-        this.bottomPanelRight.setBackground(Color.GREEN);
+        this.bottomPanelRight.setBackground(colorBottomPanelBackground);
     }
 
     private void setupButtons() {
@@ -109,15 +107,15 @@ public class GameOfLifeFrame extends JFrame {
             System.exit(1);
         }
 
+        BufferedImage resetImage = this.buttonImages.get("Reset");
+        BufferedImage playImage = this.buttonImages.get("Play");
+        // BufferedImage stopImage = this.buttonImages.get("Stop");
+        BufferedImage stepImage = this.buttonImages.get("Step");
+
         this.buttons.put("Clear", new JButton("Clear"));
         this.buttons.put("Reset", new JButton());
         this.buttons.put("Play",  new JButton());
         this.buttons.put("Step",  new JButton());
-
-        BufferedImage resetImage = this.buttonImages.get("Reset");
-        BufferedImage playImage = this.buttonImages.get("Play");
-        BufferedImage stopImage = this.buttonImages.get("Stop");
-        BufferedImage stepImage = this.buttonImages.get("Step");
 
         JButton clearButton = this.buttons.get("Clear");
         JButton resetButton = this.buttons.get("Reset");
@@ -155,6 +153,24 @@ public class GameOfLifeFrame extends JFrame {
     }
 
     private void setupSlider() {
+        JLabel left = new JLabel(GameOfLifeFrame.TIME_DELTA_MIN+" ms");
+        JLabel right = new JLabel(GameOfLifeFrame.TIME_DELTA_MAX+" ms");
+
+        left.setForeground(Color.WHITE);
+        right.setForeground(Color.WHITE);
+
+        Dictionary<Integer, JLabel> labels = new Hashtable<>();
+        labels.put(GameOfLifeFrame.TIME_DELTA_MIN, left);
+        labels.put(GameOfLifeFrame.TIME_DELTA_MAX, right);
+
+        this.slider.setLabelTable(labels);
+        this.slider.setMinorTickSpacing(GameOfLifeFrame.TIME_DELTA_MAX - GameOfLifeFrame.TIME_DELTA_MIN);
+
+        this.slider.setPaintLabels(true);
+        this.slider.setPaintTicks(true);
+
+        this.slider.setOpaque(false);
+
         this.slider.addChangeListener(e -> GameOfLifeFrame.this.timeDelta = ((JSlider) e.getSource()).getValue());
         this.slider.setFocusable(false);
     }
@@ -226,7 +242,7 @@ public class GameOfLifeFrame extends JFrame {
 
     private static final int PANEL_INIT_WIDTH = 800;
     private static final int PANEL_INIT_HEIGHT = 600;
-    private static final int TIME_DELTA_MIN = 200;
+    private static final int TIME_DELTA_MIN = 50;
     private static final int TIME_DELTA_MAX = 1000;
 
     private final GameOfLifeModel game;
@@ -261,6 +277,9 @@ public class GameOfLifeFrame extends JFrame {
     private final JSlider slider = new JSlider(JSlider.HORIZONTAL, TIME_DELTA_MIN, TIME_DELTA_MAX, timeDelta);
 
     private final Set<Integer> pressedKeys = new HashSet<>();
+
+    private final Color colorBottomPanelBackground = new Color(0xff333333); // grey : darker than background
+                                                                                //        lighter than dead cell
 
     private class CentralPanel extends JPanel implements MouseInputListener, MouseWheelListener {
         public void resetGrid() {
