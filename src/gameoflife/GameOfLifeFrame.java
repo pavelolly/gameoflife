@@ -1,14 +1,14 @@
+package gameoflife;
+
+import javax.imageio.ImageIO;
+import javax.swing.*;
+import javax.swing.event.MouseInputListener;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-
-import javax.imageio.ImageIO;
-import javax.swing.*;
-import javax.swing.border.Border;
-import javax.swing.event.MouseInputListener;
 
 public class GameOfLifeFrame extends JFrame {
     public GameOfLifeFrame(GameOfLifeModel game) {

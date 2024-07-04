@@ -1,3 +1,5 @@
+package utli;
+
 import java.util.Arrays;
 
 public final class Array2DWrapper<T> {
@@ -5,7 +7,7 @@ public final class Array2DWrapper<T> {
     private final int rows;
     private final int cols;
 
-    Array2DWrapper(T[][] buffer) {
+    public Array2DWrapper(T[][] buffer) {
         if (buffer == null) {
             this.buffer = null;
             this.rows = 0;

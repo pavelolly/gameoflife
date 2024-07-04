@@ -1,3 +1,6 @@
+package gameoflife;
+
+import utli.Array2DWrapper;
 
 public class GameOfLifeModel {
     public GameOfLifeModel(Byte[][] buffer) {

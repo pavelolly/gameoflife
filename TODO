@@ -9,9 +9,6 @@
 --! fancy buttons                        -- done
 --! fancy slider                         -- done
 --! fancy colors                         -- done
--- try get rid of magical numbers
-- repaint once in a loop
-- fps
 
 -! load state from file
 -?- add colors to state (optional)
@@ -28,3 +25,7 @@
 - make everything fancier
 -- round buttons
 -- current time delta under slider
+
+-- try get rid of magical numbers
+- repaint once in a loop
+- fps
