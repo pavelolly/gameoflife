@@ -11,7 +11,7 @@ public class GameOfLifeConfigParser {
     List<Token> tokens;
     int posiiton;
 
-    boolean bad = true;
+    boolean bad = false;
 
     Integer ROWS;
     Integer COLS;
@@ -59,8 +59,10 @@ public class GameOfLifeConfigParser {
                 case ROWS:
                 case COLS:
                     this.parseGlobalAssignNumber(token);
+                    break;
                 case CHUNKS:
                     this.parseAssignChunks();
+                    break;
                 default:
                     error(token.getType()+" can only be assigned inside a chunk", token);
             }
@@ -97,6 +99,14 @@ public class GameOfLifeConfigParser {
                 }
             }
         }
+
+        for (int i = 0; i < state.field.getRows(); i++) {
+            for (int j = 0; j < state.field.getCols(); j++) {
+                if (state.field.get(i, j) == null) {
+                    state.field.set(i, j, (byte)0);
+                }
+            }
+            }
 
         return state;
     }
@@ -228,6 +238,7 @@ public class GameOfLifeConfigParser {
                     }
 
                     row = this.parseChunkAssignNumber(token);
+                    break;
                 case COL:
                     if (col != null) {
                         error("Attempt to reassign ROWS", token);
@@ -235,10 +246,12 @@ public class GameOfLifeConfigParser {
                     }
 
                     col = this.parseChunkAssignNumber(token);
+                    break;
                 case CHUNK:
                     chunk = this.parseAssignChunk();
+                    break;
                 default:
-                    error("Unexpected token: "+token.getType()+", tou can only assign ROW, COL and CHUNK inside chunk block", token);
+                    error("Unexpected token: "+token.getType()+", you can only assign ROW, COL and CHUNK inside chunk block", token);
                     return false;
             }
         }
@@ -312,12 +325,11 @@ public class GameOfLifeConfigParser {
 
         this.skipnewlines();
 
+        int curCols = 0;
         while (this.peek().getType() != Token.Type.SEMICOLON) {
             if (this.bad) {
                 return null;
             }
-
-            int curCols = 0;
 
             token = advance();
 
@@ -325,9 +337,11 @@ public class GameOfLifeConfigParser {
                 case DOT:
                     chunk.add((byte)0);
                     ++curCols;
+                    break;
                 case STAR:
                     chunk.add((byte)1);
                     ++curCols;
+                    break;
                 case NEWLINE:
                     if (cols == null) {
                         cols = curCols;
@@ -337,13 +351,17 @@ public class GameOfLifeConfigParser {
                             return null;
                         }
                     }
-
+                    curCols = 0;
                     ++rows;
+                    break;
                 default:
                     error("Unexpected token when parsing chunk: "+token.getType(), token);
                     return null;
             }
         }
+
+        ++rows;
+        advance();
 
         if (rows == null || cols == null || chunk == null) {
             throw new AssertionError("rows, cols or chunk are null");
@@ -351,7 +369,7 @@ public class GameOfLifeConfigParser {
 
         Byte[][] buffer = new Byte[rows][cols];
         for (int i = 0; i < rows; i++) {
-            buffer[i] = (Byte[])chunk.subList(i * buffer[i].length, (i + 1) * buffer[i].length).toArray();
+            buffer[i] = (Byte[])chunk.subList(i * buffer[i].length, (i + 1) * buffer[i].length).toArray(buffer[i]);
         }
 
         return new Array2DWrapper<Byte>(buffer);

@@ -8,6 +8,11 @@ public class GameOfLifeModel {
         this.backField = new Array2DWrapper<>(buffer);
     }
 
+    public GameOfLifeModel(State state) {
+        this.field     = state.field.copy();
+        this.backField = state.field.copy();
+    }
+
     public State getState() {
         return new State(field);
     }

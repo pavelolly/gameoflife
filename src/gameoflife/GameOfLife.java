@@ -20,6 +20,11 @@ public class GameOfLife {
         GameOfLifeConfigParser parse = new GameOfLifeConfigParser(tokens);
         GameOfLifeModel.State state = parse.parse();
 
+        if (state == null) {
+            System.out.println("failed to parse state");
+            System.exit(1);
+        }
+
         for (int i = 0; i < state.field.getRows(); ++i) {
             for (int j = 0; j < state.field.getCols(); ++j) {
                 System.out.print(state.field.get(i, j)+" ");
@@ -33,7 +38,7 @@ public class GameOfLife {
 //                           {0, 1, 1, 1, 0},
 //                           {0, 0, 0, 0, 0}};
 //
-//        new GameOfLifeFrame(new GameOfLifeModel(buffer));
+        new GameOfLifeFrame(new GameOfLifeModel(state));
 
     }
 }
