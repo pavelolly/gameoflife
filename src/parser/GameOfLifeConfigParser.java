@@ -106,7 +106,7 @@ public class GameOfLifeConfigParser {
                     state.field.set(i, j, (byte)0);
                 }
             }
-            }
+        }
 
         return state;
     }

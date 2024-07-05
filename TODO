@@ -15,6 +15,8 @@
 -! make default config file
 -! save state from current
 
+- shift field with arrows
+
 - menu bar
 -! file section
 -! samples section
