@@ -242,7 +242,7 @@ public class GameOfLifeFrame extends JFrame {
 
     private static final int PANEL_INIT_WIDTH = 800;
     private static final int PANEL_INIT_HEIGHT = 600;
-    private static final int TIME_DELTA_MIN = 50;
+    private static final int TIME_DELTA_MIN = 20;
     private static final int TIME_DELTA_MAX = 1000;
 
     private final GameOfLifeModel game;
@@ -279,7 +279,7 @@ public class GameOfLifeFrame extends JFrame {
     private final Set<Integer> pressedKeys = new HashSet<>();
 
     private final Color colorBottomPanelBackground = new Color(0xff333333); // grey : darker than background
-                                                                                //        lighter than dead cell
+                                                                            //        lighter than dead cell
 
     private class CentralPanel extends JPanel implements MouseInputListener, MouseWheelListener {
         public void resetGrid() {
@@ -314,7 +314,7 @@ public class GameOfLifeFrame extends JFrame {
             }
             for (int i = 0; i < state.field.getCols(); ++i) {
                 graphics2D.drawLine(this.gridX + i * this.cellSize, this.gridY,
-                        this.gridX + i * this.cellSize, this.gridY + state.field.getCols() * this.cellSize);
+                        this.gridX + i * this.cellSize, this.gridY + state.field.getRows() * this.cellSize);
             }
         }
 

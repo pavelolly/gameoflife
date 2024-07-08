@@ -24,7 +24,7 @@ public class GameOfLifeConfigLexer {
     }
 
     public GameOfLifeConfigLexer(Path filepath, Charset charset) throws IOException {
-        this(new String(Files.readAllBytes(filepath), charset));
+        this(Files.readString(filepath, charset));
     }
 
     public List<Token> tokenize() {
@@ -47,8 +47,11 @@ public class GameOfLifeConfigLexer {
                 case '}':
                     this.addToken(Token.Type.RSQUIRLY);
                     break;
-                case ';':
-                    this.addToken(Token.Type.SEMICOLON);
+                case '[':
+                    this.addToken(Token.Type.LSQUARE);
+                    break;
+                case ']':
+                    this.addToken(Token.Type.RSQUARE);
                     break;
                 case '.':
                     this.addToken(Token.Type.DOT);
@@ -56,20 +59,22 @@ public class GameOfLifeConfigLexer {
                 case '*':
                     this.addToken(Token.Type.STAR);
                     break;
+                case '"':
+                    this.addToken(Token.Type.QUOTE);
+                    break;
                 case '\n':
                     this.addToken(Token.Type.NEWLINE);
                     break;
                 case '\0':
-                    this.addToken(Token.Type.EOF);
                     break;
                 default:
-                    String lexeme = null;
                     if (Character.isLetter(ch)) {
                         this.readWord();
                     } else if (Character.isDigit(ch)) {
                         this.readNumber();
                     } else {
-                        error("Unexpected symbol: '+ch+'", this.line, this.column);
+                        tokens.add(Token.INVALID);
+                        error("Unexpected symbol: " + ch, this.line, this.column);
                     }
                     continue;
             }
@@ -137,20 +142,14 @@ public class GameOfLifeConfigLexer {
         }
 
         String word = this.source.substring(start, this.position).toUpperCase();
-        if ("ROWS".equals(word)) {
-            this.addToken(Token.Type.ROWS);
-        } else if ("COLS".equals(word)) {
-            this.addToken(Token.Type.COLS);
-        } else if ("CHUNKS".equals(word)) {
-            this.addToken(Token.Type.CHUNKS);
-        } else if ("CHUNK".equals(word)) {
-            this.addToken(Token.Type.CHUNK);
-        } else if ("ROW".equals(word)) {
-            this.addToken(Token.Type.ROW);
-        } else if ("COL".equals(word)) {
-            this.addToken(Token.Type.COL);
-        } else {
-            error("Unexpected word: '"+word+"'", this.line, this.column);
+        switch (word) {
+            case "ROWS" -> this.addToken(Token.Type.ROWS);
+            case "COLS" -> this.addToken(Token.Type.COLS);
+            case "CHUNKS" -> this.addToken(Token.Type.CHUNKS);
+            case "CHUNK" -> this.addToken(Token.Type.CHUNK);
+            case "ROW" -> this.addToken(Token.Type.ROW);
+            case "COL" -> this.addToken(Token.Type.COL);
+            default -> error("Unexpected word: '" + word + "'", this.line, this.column);
         }
 
     }

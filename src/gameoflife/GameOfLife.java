@@ -7,38 +7,38 @@ import parser.Token;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
+import java.util.Arrays;
 
 public class GameOfLife {
     public static void main(String[] args) throws IOException {
-        GameOfLifeConfigLexer lexer = new GameOfLifeConfigLexer(Paths.get("config-example.txt"), StandardCharsets.UTF_8);
-        var tokens = lexer.tokenize();
-
+        var tokens = new GameOfLifeConfigLexer(Paths.get("config-example.txt"), StandardCharsets.UTF_8).tokenize();
         for (Token token : tokens) {
             System.out.println(token);
         }
+        var state = new GameOfLifeConfigParser(tokens).parse();
 
-        GameOfLifeConfigParser parse = new GameOfLifeConfigParser(tokens);
-        GameOfLifeModel.State state = parse.parse();
+        if (state != null) {
+            System.out.println();
+
+            for (int i = 0; i < state.field.getRows(); ++i) {
+                for (int j = 0; j < state.field.getCols(); ++j) {
+                    System.out.print((state.field.get(i, j) > 0 ? '*' : '.') + " ");
+                }
+                System.out.println();
+            }
+        }
 
         if (state == null) {
-            System.out.println("failed to parse state");
-            System.exit(1);
+            System.err.println("Failed to parse config");
+            Byte[][] buffer = new Byte[10][10];
+            Arrays.setAll(buffer, idx -> {
+                Arrays.setAll(buffer[idx], _ -> (byte) 0);
+                return buffer[idx];
+            });
+            new GameOfLifeFrame(new GameOfLifeModel(buffer));
+        } else {
+            new GameOfLifeFrame(new GameOfLifeModel(state));
         }
-
-        for (int i = 0; i < state.field.getRows(); ++i) {
-            for (int j = 0; j < state.field.getCols(); ++j) {
-                System.out.print(state.field.get(i, j)+" ");
-            }
-            System.out.println();
-        }
-
-//        Byte[][] buffer = {{0, 0, 0, 0, 0},
-//                           {0, 0, 1, 0, 0},
-//                           {0, 0, 0, 1, 0},
-//                           {0, 1, 1, 1, 0},
-//                           {0, 0, 0, 0, 0}};
-//
-        new GameOfLifeFrame(new GameOfLifeModel(state));
 
     }
 }

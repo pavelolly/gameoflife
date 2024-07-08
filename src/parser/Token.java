@@ -5,8 +5,8 @@ public class Token {
         INVALID,
         ROWS, COLS, CHUNKS, CHUNK, ROW, COL,
         NUMBER,
-        EQUALS, LSQUIRLY, RSQUIRLY, SEMICOLON,
-        DOT, STAR, NEWLINE, EOF;
+        LSQUIRLY, RSQUIRLY, LSQUARE, RSQUARE,
+        EQUALS, DOT, STAR, QUOTE, NEWLINE;
 
         public boolean isWord() {
             return this == ROWS || this == COLS || this == CHUNKS || this == CHUNK ||
@@ -25,19 +25,22 @@ public class Token {
                 case ROW: return "ROW";
                 case COL: return "COL";
                 case NUMBER: return "NUMBER";
-                case EQUALS: return "EQUALS";
                 case LSQUIRLY: return "LSQUIRLY";
                 case RSQUIRLY: return "RSQUIRLY";
-                case SEMICOLON: return "SEMICOLON";
+                case LSQUARE: return "LSQUARE";
+                case RSQUARE: return "RSQUARE";
+                case EQUALS: return "EQUALS";
                 case DOT: return "DOT";
                 case STAR: return "STAR";
+                case QUOTE: return "QUOTE";
                 case NEWLINE: return "NEWLINE";
-                case EOF: return "EOF";
             }
 
             return null;
         }
     }
+
+    public static Token INVALID = new Token(Type.INVALID, null, 0, 0);
 
     private final Type type;
     private final String lexeme;
@@ -69,10 +72,8 @@ public class Token {
 
     public static Integer length(Token.Type type) {
         switch (type) {
-            case EOF:
-                return 0;
-            case EQUALS: case LSQUIRLY: case RSQUIRLY: case SEMICOLON:
-            case DOT: case STAR: case NEWLINE:
+            case LSQUIRLY: case RSQUIRLY: case LSQUARE: case RSQUARE:
+            case EQUALS: case DOT: case STAR: case QUOTE: case NEWLINE:
                 return 1;
             case ROW: case COL:
                 return 3;
@@ -83,7 +84,7 @@ public class Token {
             case CHUNKS:
                 return 6;
             default:
-                return null;
+                throw new AssertionError("Unexpected token type: " + type);
         }
     }
 

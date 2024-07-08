@@ -44,6 +44,15 @@ public final class Array2DWrapper<T> {
         buffer[row][col] = value;
     }
 
+    public void setAll(byte value) {
+        for (int i = 0; i < this.rows; ++i) {
+            for (int j = 0; j < this.cols; ++j) {
+                buffer[i][j] = value;
+            }
+        }
+    }
+
+
     public boolean inBounds(int row, int col) {
         return 0 <= row && row < this.rows && 0 <= col && col < this.cols;
     }

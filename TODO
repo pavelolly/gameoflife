@@ -10,12 +10,14 @@
 --! fancy slider                         -- done
 --! fancy colors                         -- done
 
--! load state from file
+-! load state from file                  -- done
+-- print lines from file in Parser.error()
 -?- add colors to state (optional)
 -! make default config file
 -! save state from current
 
 - shift field with arrows
+- make scaling to cursor
 
 - menu bar
 -! file section

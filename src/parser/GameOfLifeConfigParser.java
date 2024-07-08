@@ -1,6 +1,5 @@
 package parser;
 
-import gameoflife.GameOfLife;
 import gameoflife.GameOfLifeModel;
 import utli.Array2DWrapper;
 
@@ -8,408 +7,452 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GameOfLifeConfigParser {
-    List<Token> tokens;
-    int posiiton;
-
-    boolean bad = false;
-
-    Integer ROWS;
-    Integer COLS;
-    ArrayList<Chunk> CHUNKS = new ArrayList<>();
-
-    private class Chunk {
-        Array2DWrapper<Byte> chunk;
-        int row;
-        int col;
-
-        public Chunk(Array2DWrapper<Byte> chunk, int row, int col) {
-            this.chunk = chunk;
-            this.row = row;
-            this.col = col;
-        }
-    }
-
     public GameOfLifeConfigParser(List<Token> tokens) {
         this.tokens = tokens;
-        this.posiiton = 0;
+        this.position = 0;
     }
 
     public GameOfLifeModel.State parse() {
-        if (this.tokens == null) {
-            return null;
-        }
+        skipNewLines();
 
-        while (!this.atEnd()) {
-            if (this.bad) {
+        while (!atEnd()) {
+            if (bad) {
                 return null;
             }
 
-            this.skipnewlines();
+            skipNewLines();
 
-            Token token = advance();
-
-            if (!token.getType().isWord()) {
-                error("Word expected but got "+token.getType(), token);
-                continue;
-            }
-
-            Token.Type type = token.getType();
-
-            switch (type) {
-                case ROWS:
-                case COLS:
-                    this.parseGlobalAssignNumber(token);
-                    break;
-                case CHUNKS:
-                    this.parseAssignChunks();
-                    break;
-                default:
-                    error(token.getType()+" can only be assigned inside a chunk", token);
+            Token.Type first = peek().getType();
+            switch (first) {
+                case Token.Type.ROWS -> parseAssignment(Token.Type.ROWS);
+                case Token.Type.COLS -> parseAssignment(Token.Type.COLS);
+                case Token.Type.CHUNKS -> parseAssignment(Token.Type.CHUNKS);
+                default -> error("ROWS, COLS or CHUNKS assignment expected but got " + first, peek());
             }
         }
 
-        return this.makeGameOfLifeState();
-    }
+        System.out.println();
 
-    private GameOfLifeModel.State makeGameOfLifeState() {
-        if (this.ROWS == null) {
-            error("ROWS was never assigned");
-        }
-        if (this.COLS == null) {
-            error("COLS was never assigned");
-        }
-        if (this.CHUNKS.isEmpty()) {
-            error("CHUNKS were never added");
+        if (!bad) {
+            System.out.println("ROWS : " + ROWS + ", COLS : " + COLS);
+            System.out.println("CHUNKS :");
+            for (Chunk chunk : CHUNKS) {
+                System.out.println("ROW : " + chunk.ROW + ", COL : " + chunk.COL);
+                System.out.println("CHUNK :");
+                for (int i = 0; i < chunk.CHUNK.getRows(); ++i) {
+                    for (int j = 0; j < chunk.CHUNK.getCols(); ++j) {
+                        System.out.print(chunk.CHUNK.get(i, j) + " ");
+                    }
+                    System.out.println();
+                }
+            }
         }
 
-        if (this.bad) {
+        if (bad) {
             return null;
         }
 
-        GameOfLifeModel.State state = new GameOfLifeModel.State(new Byte[this.ROWS][this.COLS]);
-        for (Chunk chunk : this.CHUNKS) {
-            for (int i = 0; i < chunk.chunk.getRows(); i++) {
-                for (int j = 0; j < chunk.chunk.getCols(); j++) {
-                    int ci = chunk.row + i;
-                    int cj = chunk.col + j;
+        GameOfLifeModel.State state;
+        if (CHUNKS.isEmpty()) {
+            if (ROWS == null || COLS == null) {
+                System.err.println("ERROR: You have to define ROWS and COLS if CHUNKS is empty");
+                return null;
+            }
 
-                    if (state.field.inBounds(ci, cj)) {
-                        state.field.set(ci, cj, chunk.chunk.get(i, j));
+            state = new GameOfLifeModel.State(new Byte[ROWS][COLS]);
+        } else {
+            if (ROWS == null) {
+                ROWS = getROWSFromCHUNKS();
+            }
+
+            if (COLS  == null) {
+                COLS = getCOLSFromCHUNKS();
+            }
+
+            Array2DWrapper<Byte> buffer = new Array2DWrapper<>(new Byte[ROWS][COLS]);
+            buffer.setAll((byte)0);
+            for (Chunk chunk : CHUNKS) {
+                for (int i = 0; i < chunk.CHUNK.getRows(); i++) {
+                    for (int j = 0; j < chunk.CHUNK.getCols(); j++) {
+                        int cell_i = chunk.ROW + i;
+                        int cell_j = chunk.COL + j;
+
+                        if (!buffer.inBounds(cell_i, cell_j)) {
+                            continue;
+                        }
+
+                        buffer.set(cell_i, cell_j, chunk.CHUNK.get(i, j));
                     }
                 }
             }
-        }
 
-        for (int i = 0; i < state.field.getRows(); i++) {
-            for (int j = 0; j < state.field.getCols(); j++) {
-                if (state.field.get(i, j) == null) {
-                    state.field.set(i, j, (byte)0);
-                }
-            }
+            state = new GameOfLifeModel.State(buffer);
         }
 
         return state;
     }
 
-    private void parseGlobalAssignNumber(Token wordToken) {
-        if (wordToken.getType() == Token.Type.ROWS && this.ROWS != null) {
-            error("Attempt to reassign ROWS", wordToken);
-            return;
+    private int getROWSFromCHUNKS() {
+        int maxRows = 0;
+        for (Chunk chunk : CHUNKS) {
+            int rows = chunk.ROW + chunk.CHUNK.getRows();
+            if (rows > maxRows) {
+                maxRows = rows;
+            }
         }
-        if (wordToken.getType() == Token.Type.COLS && this.COLS != null) {
-            error("Attempt to reassign COLS", wordToken);
-            return;
+        return Math.max(maxRows, 0);
+    }
+
+    private int getCOLSFromCHUNKS() {
+        int maxCols = 0;
+        for (Chunk chunk : CHUNKS) {
+            int cols = chunk.COL + chunk.CHUNK.getCols();
+            if (cols > maxCols) {
+                maxCols = cols;
+            }
         }
+        return Math.max(maxCols, 0);
+    }
 
-        this.skipnewlines();
+    private void parseAssignment(Token.Type type) {
+        // consume word
+        Token word = advance();
 
-        Token token = advance();
-
-        if (token.getType() != Token.Type.EQUALS) {
-            error("Expected '=' after "+wordToken.getType()+" but got "+token.getType(), token);
-            return;
-        }
-
-        this.skipnewlines();
-
-        token = advance();
-
-        if (token.getType() != Token.Type.NUMBER) {
-            error("Expected number to assign to "+wordToken.getType()+" but got "+token.getType(), token);
-            return;
-        }
-
-        Integer value = Integer.parseInt(token.getLexeme());
-
-        this.skipnewlines();
-
-        token = advance();
-
-        if (token.getType() != Token.Type.SEMICOLON) {
-            error("Expected ';' after assignment but got "+token.getType(), token);
+        Token equals = advance();
+        if (equals.getType() != Token.Type.EQUALS) {
+            error("Expected EQUALS after " + type + ", but got " + equals.getType(), equals);
             return;
         }
 
-        switch (wordToken.getType()) {
-            case ROWS:
-                this.ROWS = value;
+        switch (type) {
+            case Token.Type.ROWS:
+            case Token.Type.COLS:
+                Token[] tokens = advance(2);
+
+                if (tokens[0].getType() != Token.Type.NUMBER) {
+                    error("Expected NUMBER after EQUALS, but got " + tokens[0].getType(), tokens[0]);
+                    return;
+                }
+
+                if (tokens[1].getType() != Token.Type.NEWLINE && tokens[1].getType() != Token.Type.INVALID) {
+                    error("Expected NEWLINE or END_OF_FILE after NUMBER, but got " + tokens[1].getType(), tokens[1]);
+                    return;
+                }
+
+                if (getVar(type) != null) {
+                    error("Attempt to reassign " + type, word);
+                    return;
+                }
+
+                setVar(type, Integer.parseInt(tokens[0].getLexeme()));
+
                 break;
-            case COLS:
-                this.COLS = value;
+            case Token.Type.CHUNKS:
+                Token lsquare = advance();
+
+                if (lsquare.getType() != Token.Type.LSQUARE) {
+                    error("Expected LSQUARE after EQUALS, but got " + lsquare.getType(), lsquare);
+                    return;
+                }
+
+                while (!bad && peek().getType() != Token.Type.RSQUARE && peek().getType() != Token.Type.INVALID) {
+                    parseChunk();
+                }
+
+                if (bad) {
+                    return;
+                }
+
+                if (peek().getType() != Token.Type.RSQUARE) {
+                    error("Could not find RSQUARE", lsquare);
+                    return;
+                }
+
+                Token[] chunksEnd = advance(2);
+
+                // chunksEnd[0] is RSQUARE
+
+                if (chunksEnd[1].getType() != Token.Type.NEWLINE && chunksEnd[1].getType() != Token.Type.INVALID) {
+                    error("Expected NEWLINE or END_OF_FILE after RSQUARE, but got " + chunksEnd[1].getType(), chunksEnd[1]);
+                    return;
+                }
+
                 break;
             default:
-                throw new AssertionError("Unreachable: wordToken is neither ROWS nor COLS");
+                throw new AssertionError("parseAssignment() called with incorrect type " + type);
         }
     }
 
-    private void parseAssignChunks() {
-        this.skipnewlines();
-        Token token = advance();
+    private void parseChunk() {
+        skipNewLines();
 
-        if (token.getType() != Token.Type.EQUALS) {
-            error("Expected '=' after CHUNKS but got "+token.getType(), token);
+        Token lsquirly = advance();
+
+        if (lsquirly.getType() != Token.Type.LSQUIRLY) {
+            error("Chunk block should start with LSQUIRLY, but got " + lsquirly, lsquirly);
             return;
         }
 
-        this.skipnewlines();
-
-        token = advance();
-
-        if (token.getType() != Token.Type.LSQUIRLY) {
-            error("Expected '{' as the start of CHUNKS but got "+token.getType(), token);
+        Token newLine = advance();
+        if (newLine.getType() != Token.Type.NEWLINE) {
+            error("Expected NEWLINE afer LSQUIRLY, but got " + newLine.getType(), newLine);
             return;
         }
 
-        this.skipnewlines();
+        skipNewLines();
 
-        while (this.parseChunk()) {
-            if (this.bad) {
+        Integer ROW = null;
+        Integer COL = null;
+        List<Chunk> chunks = new ArrayList<>();
+        while (!bad && peek().getType() != Token.Type.RSQUIRLY && peek().getType() != Token.Type.INVALID) {
+            Token word = advance();
+
+            Token equals = advance();
+            if (equals.getType() != Token.Type.EQUALS) {
+                error("Expected EQUALS after " + word.getType() + ", but got " + equals.getType(), equals);
                 return;
             }
+
+            switch (word.getType()) {
+                case Token.Type.ROW:
+                case Token.Type.COL:
+                    Token[] tokens = advance(2);
+
+                    if (tokens[0].getType() != Token.Type.NUMBER) {
+                        error("Expected NUMBER after EQUALS, but got " + tokens[0].getType(), tokens[0]);
+                        return;
+                    }
+
+                    if (tokens[1].getType() != Token.Type.NEWLINE) {
+                        error("Expected NEWLINE after NUMBER, but got " + tokens[1].getType(), tokens[1]);
+                        return;
+                    }
+
+                    if (word.getType() == Token.Type.ROW) {
+                        if (ROW != null) {
+                            error("Attempt to reassign " + word.getType(), word);
+                            return;
+                        }
+
+                        ROW = Integer.parseInt(tokens[0].getLexeme());
+                    } else if (word.getType() == Token.Type.COL) {
+                        if (COL != null) {
+                            error("Attempt to reassign " + word.getType(), word);
+                            return;
+                        }
+
+                        COL = Integer.parseInt(tokens[0].getLexeme());
+                    } else {
+                        throw new AssertionError("Unreachable code: neither ROW nor COL in 'case ROW: case COL'");
+                    }
+
+                    break;
+                case Token.Type.CHUNK:
+                    List<List<Byte>> cells = parseChunkLiteral();
+
+                    if (bad) {
+                        return;
+                    }
+
+                    if (ROW == null || COL == null) {
+                        error("Should define ROW and COL before defining CHUNK", word);
+                        return;
+                    }
+
+                    chunks.add(new Chunk(ROW, COL, cells));
+                    break;
+                default:
+            }
+
+            skipNewLines();
         }
 
-        this.skipnewlines();
-
-        token = advance();
-
-        if (token.getType() != Token.Type.RSQUIRLY) {
-            error("Expected '}' as the end of CHUNKS but got "+token.getType(), token);
+        if (bad) {
             return;
         }
+
+        if (peek().getType() != Token.Type.RSQUIRLY) {
+            error("Could not find RSQUIRLY", lsquirly);
+            return;
+        }
+
+        Token[] chunkEnd = advance(2);
+
+        // chunkEnd[0] is RSQURLY
+
+        if (chunkEnd[1].getType() != Token.Type.NEWLINE) {
+            error("Expected NEWLINE after RSQUIRLY, but got " + chunkEnd[1].getType(), chunkEnd[1]);
+            return;
+        }
+
+        this.CHUNKS.addAll(chunks);
     }
 
-    private boolean parseChunk() {
-        this.skipnewlines();
+    private List<List<Byte>> parseChunkLiteral() {
+        skipNewLines();
 
-        Token token = peek();
-
-        if (token.getType() == Token.Type.RSQUIRLY) {
-            return false;
-        }
-
-        token = advance();
-
-        if (token.getType() != Token.Type.LSQUIRLY) {
-            error("Expected '{' as the start of a chunk but got "+token.getType(), token);
-            return false;
-        }
-
-        this.skipnewlines();
-
-        Integer row = null;
-        Integer col = null;
-        Array2DWrapper<Byte> chunk = null;
-        while (this.peek().getType() != Token.Type.RSQUIRLY) {
-            if (this.bad) {
-                return false;
-            }
-
-            token = advance();
-
-            if (token.getType() == Token.Type.NEWLINE) {
-                continue;
-            }
-
-            switch (token.getType()) {
-                case ROW:
-                    if (row != null) {
-                        error("Attempt to reassign ROWS", token);
-                        break;
-                    }
-
-                    row = this.parseChunkAssignNumber(token);
-                    break;
-                case COL:
-                    if (col != null) {
-                        error("Attempt to reassign ROWS", token);
-                        break;
-                    }
-
-                    col = this.parseChunkAssignNumber(token);
-                    break;
-                case CHUNK:
-                    chunk = this.parseAssignChunk();
-                    break;
-                default:
-                    error("Unexpected token: "+token.getType()+", you can only assign ROW, COL and CHUNK inside chunk block", token);
-                    return false;
-            }
-        }
-
-        if (row == null) {
-            error("ROW wasn't assigned in a chunk", token);
-        }
-        if (col == null) {
-            error("COL wasn't assigned in a chunk", token);
-        }
-        if (chunk == null) {
-            error("CHUNK wasn't assigned in a chunk", token);
-        }
-
-        advance();
-
-        if (this.bad) {
-            return false;
-        }
-
-        CHUNKS.add(new Chunk(chunk, row, col));
-
-        return true;
-    }
-
-    private Integer parseChunkAssignNumber(Token wordToken) {
-        this.skipnewlines();
-
-        Token token = advance();
-
-        if (token.getType() != Token.Type.EQUALS) {
-            error("Expected '=' after "+wordToken.getType()+" but got "+token.getType(), token);
+        Token openQuote = advance();
+        if (openQuote.getType() != Token.Type.QUOTE) {
+            error("Chunk literal shouls start with QUOTE, but got " + openQuote.getType(), openQuote);
             return null;
         }
 
-        this.skipnewlines();
-
-        token = advance();
-
-        if (token.getType() != Token.Type.NUMBER) {
-            error("Expected number to assign to "+wordToken.getType()+" but got "+token.getType(), token);
-            return null;
-        }
-
-        Integer value = Integer.parseInt(token.getLexeme());
-
-        this.skipnewlines();
-
-        token = advance();
-
-        if (token.getType() != Token.Type.SEMICOLON) {
-            error("Expected ';' after assignment but got "+token.getType(), token);
-            return null;
-        }
-
-        return value;
-    }
-
-    private Array2DWrapper<Byte> parseAssignChunk() {
-        Integer rows = 0, cols = null;
-        ArrayList<Byte> chunk = new ArrayList<>();
-
-        this.skipnewlines();
-
-        Token token = advance();
-
-        if (token.getType() != Token.Type.EQUALS) {
-            error("Expected '=' after CHUNK but got "+token.getType(), token);
-            return null;
-        }
-
-        this.skipnewlines();
+        Integer cols = null;
+        List<List<Byte>> cells = new ArrayList<>();
+        cells.add(new ArrayList<>());
 
         int curCols = 0;
-        while (this.peek().getType() != Token.Type.SEMICOLON) {
-            if (this.bad) {
-                return null;
-            }
+        while (peek().getType() != Token.Type.QUOTE && peek().getType() != Token.Type.INVALID) {
+            Token cell = advance();
 
-            token = advance();
-
-            switch (token.getType()) {
-                case DOT:
-                    chunk.add((byte)0);
-                    ++curCols;
-                    break;
-                case STAR:
-                    chunk.add((byte)1);
-                    ++curCols;
-                    break;
-                case NEWLINE:
-                    if (cols == null) {
-                        cols = curCols;
-                    } else {
-                        if (curCols != cols) {
-                            error("Assign chunk which is not a rectangle", token);
+            switch (cell.getType()) {
+                case Token.Type.NEWLINE -> {
+                    if (cols != null) {
+                        if (cols != curCols) {
+                            error("Chunk literal is not a rectangle", cell);
                             return null;
                         }
+                    } else {
+                        cols = curCols;
                     }
                     curCols = 0;
-                    ++rows;
-                    break;
-                default:
-                    error("Unexpected token when parsing chunk: "+token.getType(), token);
+                    cells.add(new ArrayList<>());
+                }
+                case Token.Type.DOT -> {
+                    cells.getLast().add((byte) 0);
+                    curCols++;
+                }
+                case Token.Type.STAR -> {
+                    cells.getLast().add((byte) 1);
+                    curCols++;
+                }
+                default -> {
+                    error("Unexpected token in chunk literal: " + cell.getType(), cell);
                     return null;
+                }
             }
         }
 
-        ++rows;
-        advance();
+        Token closeQuote = advance();
 
-        if (rows == null || cols == null || chunk == null) {
-            throw new AssertionError("rows, cols or chunk are null");
+        if (closeQuote.getType() != Token.Type.QUOTE) {
+            error("Unterminated chunk literal", openQuote);
+            return null;
         }
 
-        Byte[][] buffer = new Byte[rows][cols];
-        for (int i = 0; i < rows; i++) {
-            buffer[i] = (Byte[])chunk.subList(i * buffer[i].length, (i + 1) * buffer[i].length).toArray(buffer[i]);
+        if (cells.isEmpty() || cells.getFirst().isEmpty()) {
+            error("Bad chunk literal", closeQuote);
         }
 
-        return new Array2DWrapper<Byte>(buffer);
+        return cells;
     }
 
+    private void error(String message, Token badToken) {
+        System.err.printf("ERROR:%d:%d: %s\n", badToken.getLine(), badToken.getColumn(), message);
+        System.err.println();
 
-    private void error(String message, Token token) {
-        System.out.printf("ERROR %d:%d: %s\n", token.getLine(), token.getColumn(), message);
-        this.bad = true;
-    }
-
-    private void error(String message) {
-        System.out.println("GLOBAL ERROR: "+message);
-        this.bad = true;
+        bad = true;
     }
 
     private boolean atEnd() {
-        return this.posiiton >= this.tokens.size();
+        return position >= tokens.size();
     }
 
     private Token advance() {
-        if (atEnd()) {
-            return new Token(Token.Type.INVALID, null, 0, 0);
+        return atEnd() ? Token.INVALID : tokens.get(position++);
+    }
+
+    private Token advanceExceptNewLine() {
+        skipNewLines();
+        return advance();
+    }
+
+    private Token[] advance(int n) {
+        if (n <= 0) {
+            return new Token[0];
         }
 
-        return this.tokens.get(this.posiiton++);
+        Token[] peeked = peek(n);
+        position += n;
+        return peeked;
     }
 
     private Token peek() {
-        if (atEnd()) {
-            return new Token(Token.Type.INVALID, null, 0, 0);
-        }
-
-        return this.tokens.get(this.posiiton);
+        return atEnd() ? Token.INVALID : tokens.get(position);
     }
 
-    private void skipnewlines() {
-        while (this.peek().getType() == Token.Type.NEWLINE) {
-            advance();
+    private Token[] peek(int n) {
+        if (n <= 0) return new Token[0];
+
+        Token[] peeked = new Token[n];
+        for (int i = 0; i < n; i++) {
+            int idx = position + i;
+
+            if (idx < tokens.size()) {
+                peeked[i] = tokens.get(idx);
+            } else {
+                peeked[i] = Token.INVALID;
+            }
+        }
+
+        return peeked;
+    }
+
+    private void skipNewLines() {
+        while (peek().getType() == Token.Type.NEWLINE) {
+            position++;
+        }
+    }
+
+    private Integer getVar(Token.Type type) {
+        return switch (type) {
+            case Token.Type.ROWS -> ROWS;
+            case Token.Type.COLS -> COLS;
+            default -> throw new AssertionError("getVar() called with incorrect type " + type);
+        };
+    }
+
+    private void setVar(Token.Type type, Integer value) {
+        switch (type) {
+            case Token.Type.ROWS -> ROWS = value;
+            case Token.Type.COLS -> COLS = value;
+            default -> throw new AssertionError("setVar() called with incorrect type " + type);
+        }
+    }
+
+
+    private List<Token> tokens;
+    private int position;
+
+    private boolean bad = false;
+
+    Integer ROWS = null;
+    Integer COLS = null;
+    List<Chunk> CHUNKS = new ArrayList<>();
+
+    private static class Chunk {
+        public int ROW;
+        public int COL;
+        public Array2DWrapper<Byte> CHUNK;
+
+        public Chunk(int row, int col, List<List<Byte>> cells) {
+            this.ROW = row;
+            this.COL = col;
+
+            Byte[][] cellsArray = new Byte[cells.size()][];
+            for (int i = 0; i < cells.size(); i++) {
+                cellsArray[i] = cells.get(i).toArray(new Byte[cells.get(i).size()]);
+            }
+
+            this.CHUNK = new Array2DWrapper<>(cellsArray);
+        }
+
+        public Chunk(int row, int col, Array2DWrapper<Byte> CHUNKS) {
+            this.ROW = row;
+            this.COL = col;
+            this.CHUNK = CHUNKS;
         }
     }
 
 }
+
