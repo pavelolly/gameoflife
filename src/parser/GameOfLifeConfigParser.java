@@ -13,6 +13,10 @@ public class GameOfLifeConfigParser {
     }
 
     public GameOfLifeModel.State parse() {
+        if (tokens == null) {
+            return null;
+        }
+
         skipNewLines();
 
         while (!atEnd()) {
@@ -67,6 +71,16 @@ public class GameOfLifeConfigParser {
 
             if (COLS  == null) {
                 COLS = getCOLSFromCHUNKS();
+            }
+
+            if (ROWS <= 0) {
+                System.out.println("ROWS must be greater than 0");
+                return null;
+            }
+
+            if (COLS <= 0) {
+                System.out.println("COLS must be greater than 0");
+                return null;
             }
 
             Array2DWrapper<Byte> buffer = new Array2DWrapper<>(new Byte[ROWS][COLS]);

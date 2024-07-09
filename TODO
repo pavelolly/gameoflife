@@ -1,16 +1,16 @@
-- build to .jar                          -- no need as i moved to IDEA
-- make slider with speed of simulation   -- done
-- key bindings                           -- done (TODO(done): make bindings not depend on focus)
--! move field                            -- done
--! change field with clicks              -- done
--! scale field                           -- done
-- refactor code                          -- done
--! make app look fancy                   -- done
---! fancy buttons                        -- done
---! fancy slider                         -- done
---! fancy colors                         -- done
+- build to .jar                             -- no need as i moved to IDEA
+- make slider with speed of simulation      -- done
+- key bindings                              -- done (TODO(done): make bindings not depend on focus)
+-! move field                               -- done
+-! change field with clicks                 -- done
+-! scale field                              -- done
+- refactor code                             -- done
+-! make app look fancy                      -- done
+--! fancy buttons                           -- done
+--! fancy slider                            -- done
+--! fancy colors                            -- done
 
--! load state from file                  -- done
+-! load state from file                     -- done
 -- print lines from file in Parser.error()
 -?- add colors to state (optional)
 -! make default config file
@@ -18,6 +18,7 @@
 
 - shift field with arrows
 - make scaling to cursor
+- make scaling step lower (or even dynamic) -- done (lower)
 
 - menu bar
 -! file section
@@ -32,4 +33,4 @@
 
 -- try get rid of magical numbers
 - repaint once in a loop
-- fps
+- fps (just for fun)

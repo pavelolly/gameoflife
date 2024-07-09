@@ -320,6 +320,7 @@ public class GameOfLifeFrame extends JFrame {
 
         private static final int CELL_SIZE_MIN = 5;
         private static final int CELL_SIZE_MAX = 60;
+        private static final int SCALE_FACTOR = 3;
 
         private int cellSize = 20;
         private int gridX = 100;
@@ -413,7 +414,7 @@ public class GameOfLifeFrame extends JFrame {
 
             int rotation = e.getWheelRotation();
 
-            this.cellSize += (-rotation) * 5;
+            this.cellSize += (-rotation) * CentralPanel.SCALE_FACTOR;
 
             // clamp
             this.cellSize = Math.max(CentralPanel.CELL_SIZE_MIN, Math.min(CentralPanel.CELL_SIZE_MAX, this.cellSize));

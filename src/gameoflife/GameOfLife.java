@@ -12,9 +12,13 @@ import java.util.Arrays;
 public class GameOfLife {
     public static void main(String[] args) throws IOException {
         var tokens = new GameOfLifeConfigLexer(Paths.get("config-example.txt"), StandardCharsets.UTF_8).tokenize();
-        for (Token token : tokens) {
-            System.out.println(token);
+
+        if (tokens != null) {
+            for (Token token : tokens) {
+                System.out.println(token);
+            }
         }
+
         var state = new GameOfLifeConfigParser(tokens).parse();
 
         if (state != null) {
