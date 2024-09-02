@@ -1,10 +1,6 @@
 # Conway's Game of Life
 
-Game of Life implementation in Java using java.swing
-
-## Description
-
-This project is work in progress. It is not yet polished and some features are not implemented.
+Game of Life implementation in Java with java.swing
 
 ## UI
 
@@ -18,11 +14,9 @@ All of these actions have keys attached to them:
 
 ## Config
 
-You can create your own initial state of the game with text file
-(there is example called ```config-example.txt```)
+There is config file with inititla state of the game `config-example.txt`
 
-The rules of making config are:
-
+The syntax is the following:
 - define ROWS and COLS whuck are dimensions of the grid
 - define CHUNKS as list of objects in curly braces
 - every object must contain ROW, COL and CHUNK which are position and layout of some part of the grid
