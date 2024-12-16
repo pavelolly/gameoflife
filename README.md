@@ -1,12 +1,14 @@
 # Conway's Game of Life
 
-Game of Life implementation in Java using java.swing
+Game of Life implementation in Java using `java.swing`
 
 ## Description
 
 This project is work in progress. It is not yet polished and some features are not implemented.
 
 ## UI
+
+![](.github/screen.jpg)
 
 To control the game you can use panel with buttons at the bottom of the window.
 You can start and stop the simulation or run it step by step. You can also clear the field and reset it to its initial state.
@@ -32,8 +34,8 @@ The rules of making config are:
 
 config-example.txt:
 ```
-ROWS = 100
-COLS = 200
+ROWS = 70
+COLS = 70
 
 CHUNKS = [
 {
