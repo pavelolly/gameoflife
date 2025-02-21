@@ -2,10 +2,6 @@
 
 Game of Life implementation in Java using `java.swing`
 
-## Description
-
-This project is work in progress. It is not yet polished and some features are not implemented.
-
 ## UI
 
 ![](.github/screen.jpg)
